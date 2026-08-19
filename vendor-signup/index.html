@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Join as a Vendor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#08080a;--card:#101113;--lime:#B4FF39;--purple:#8B2FE0;--ink:#F2F2ED;--muted:#8A8A93;--line:rgba(242,242,237,0.09);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:560px;margin:0 auto;padding:48px 24px 80px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#c397f5;letter-spacing:0.06em;margin-bottom:14px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(1.6rem,5vw,2.1rem);letter-spacing:-0.02em;margin-bottom:12px;}
+  .sub{color:var(--muted);line-height:1.6;margin-bottom:28px;font-size:0.95rem;}
+
+  .host-banner{
+    background:linear-gradient(135deg, rgba(180,255,57,0.08), rgba(139,47,224,0.08));
+    border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:28px;
+  }
+  .host-banner .label{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .host-banner .name{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;}
+  .host-banner .slots{font-size:0.82rem;color:var(--muted);margin-top:4px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
+  .field input{width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--ink);font-size:0.95rem;outline:none;}
+  .field input:focus{border-color:var(--lime);}
+
+  .submit-btn{width:100%;font-family:'Space Grotesk',sans-serif;font-weight:600;background:var(--lime);color:#08080a;border:none;padding:16px;border-radius:8px;font-size:0.95rem;cursor:pointer;margin-top:8px;}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .status-msg{margin-top:16px;padding:12px 14px;border-radius:8px;font-size:0.88rem;display:none;}
+  .status-msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .status-msg.ok{display:block;background:rgba(180,255,57,0.08);border:1px solid rgba(180,255,57,0.3);color:var(--lime);}
+
+  .error-screen{text-align:center;padding:60px 20px;color:var(--muted);}
+  #main-content{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loading" style="color:var(--muted);">Loading…</div>
+  <div id="error-screen" class="error-screen" style="display:none;">
+    <p>This referral link isn't valid, or the packet is full. Check the link with your event host, or reach out to Locals Go directly.</p>
+  </div>
+
+  <div id="main-content">
+    <div class="eyebrow">// VENDOR SIGN-UP</div>
+    <h1>Join Locals Go as a founding vendor.</h1>
+    <p class="sub">You're being invited by an event host. Fill in your business info and you'll be part of the game — check-ins, missions, and real customer traffic.</p>
+
+    <div class="host-banner">
+      <div class="label">Invited by</div>
+      <div class="name" id="host-name-display">—</div>
+      <div class="slots" id="slots-display">—</div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>Your Name</label>
+        <input type="text" id="vendor-name" required>
+      </div>
+      <div class="field">
+        <label>Business Name</label>
+        <input type="text" id="vendor-business" required>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="vendor-email">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="vendor-phone">
+      </div>
+      <button class="submit-btn" id="submit-btn">Join as a Vendor</button>
+      <div class="status-msg" id="status-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const params = new URLSearchParams(window.location.search);
+  const refCode = params.get('ref');
+  let referralInfo = null;
+
+  async function init() {
+    if (!refCode) { showError(); return; }
+
+    const { data, error } = await sb.rpc('get_referral_info', { code: refCode });
+    if (error || !data || data.length === 0) { showError(); return; }
+
+    referralInfo = data[0];
+    if (referralInfo.slots_used >= referralInfo.vendor_slots) { showError(); return; }
+
+    document.getElementById('host-name-display').textContent = referralInfo.business_name || referralInfo.host_name;
+    const remaining = referralInfo.vendor_slots - referralInfo.slots_used;
+    document.getElementById('slots-display').textContent = `${referralInfo.tier_name} · ${remaining} of ${referralInfo.vendor_slots} vendor slots remaining`;
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+  }
+
+  function showError() {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-screen').style.display = 'block';
+  }
+
+  document.getElementById('submit-btn').onclick = async () => {
+    const name = document.getElementById('vendor-name').value.trim();
+    const business = document.getElementById('vendor-business').value.trim();
+    const email = document.getElementById('vendor-email').value.trim();
+    const phone = document.getElementById('vendor-phone').value.trim();
+    const statusMsg = document.getElementById('status-msg');
+    statusMsg.style.display = 'none';
+
+    if (!name || !business) {
+      statusMsg.textContent = 'Please enter your name and business name.';
+      statusMsg.className = 'status-msg err';
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    try {
+      const { error } = await sb.from('lg_host_referred_vendors').insert({
+        packet_purchase_id: referralInfo.purchase_id,
+        host_id: referralInfo.host_id,
+        vendor_name: business,
+        vendor_contact_email: email || null,
+        vendor_contact_phone: phone || null,
+        status: 'invited'
+      });
+      if (error) throw error;
+
+      statusMsg.textContent = "You're in! Locals Go will follow up to get your business live in the app.";
+      statusMsg.className = 'status-msg ok';
+      document.getElementById('vendor-name').value = '';
+      document.getElementById('vendor-business').value = '';
+      document.getElementById('vendor-email').value = '';
+      document.getElementById('vendor-phone').value = '';
+      btn.textContent = 'Submitted';
+    } catch (err) {
+      statusMsg.textContent = "Something went wrong — please try again.";
+      statusMsg.className = 'status-msg err';
+      btn.disabled = false;
+      btn.textContent = 'Join as a Vendor';
+    }
+  };
+
+  init();
+</script>
+</body>
+</html>
