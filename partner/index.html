@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Founding Partner Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#08080a; --card:#101113; --lime:#B4FF39; --purple:#8B2FE0; --gold:#F2C94C;
+    --ink:#F2F2ED; --muted:#8A8A93; --line:rgba(242,242,237,0.09);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;padding-bottom:76px;min-height:100vh;}
+  .screen{display:none;padding:20px 18px 40px;max-width:520px;margin:0 auto;}
+  .screen.active{display:block;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;}
+  .muted{color:var(--muted);}
+  button{font-family:'Space Grotesk',sans-serif;cursor:pointer;border:none;}
+  input,select,textarea{font-family:'Inter',sans-serif;}
+
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+  .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;}
+  .badge-avatar{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--lime),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;color:#08080a;margin-bottom:16px;}
+  .login-card h1{font-size:1.25rem;margin-bottom:6px;}
+  .login-card p{color:var(--muted);font-size:0.85rem;margin-bottom:22px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .field input,.field select,.field textarea{width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;padding:12px 13px;color:var(--ink);font-size:0.9rem;outline:none;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lime);}
+  .btn{width:100%;font-weight:600;font-size:0.9rem;border-radius:8px;padding:14px;margin-top:6px;}
+  .btn-primary{background:var(--lime);color:#08080a;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .btn-purple{background:var(--purple);color:#fff;}
+  .toggle-row{text-align:center;margin-top:16px;}
+  .toggle-row button{background:none;color:var(--muted);font-size:0.8rem;text-decoration:underline;font-family:'Inter',sans-serif;}
+  .msg{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:0.82rem;display:none;}
+  .msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .msg.ok{display:block;background:rgba(180,255,57,0.08);border:1px solid rgba(180,255,57,0.3);color:var(--lime);}
+
+  #app-shell{display:none;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(8,8,10,0.92);backdrop-filter:blur(8px);z-index:20;}
+  .topbar .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.95rem;}
+  .topbar .dot{width:8px;height:8px;border-radius:50%;background:var(--lime);}
+  #logout-btn{background:none;color:var(--muted);border:1px solid var(--line);border-radius:100px;padding:6px 12px;font-size:0.7rem;font-family:'JetBrains Mono',monospace;}
+
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,8,10,0.95);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 0 14px;z-index:30;}
+  .nav-item{background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:0.62rem;font-family:'JetBrains Mono',monospace;letter-spacing:0.03em;}
+  .nav-item.active{color:var(--lime);}
+  .nav-item .icon{font-size:1.2rem;}
+
+  .fab-reesee{position:fixed;bottom:82px;right:18px;background:linear-gradient(135deg,var(--lime),var(--purple));color:#08080a;border-radius:100px;padding:12px 18px;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:6px;box-shadow:0 8px 24px rgba(0,0,0,0.4);z-index:25;}
+
+  .reesee-intro{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:20px;}
+  .reesee-intro .avatar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .reesee-intro .avatar-row .av{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--lime),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;color:#08080a;}
+  .reesee-intro p{color:var(--muted);font-size:0.88rem;line-height:1.5;}
+  .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+  .action-btn{background:#08080a;border:1px solid var(--line);border-radius:12px;padding:16px 12px;text-align:left;color:var(--ink);}
+  .action-btn .emoji{font-size:1.3rem;display:block;margin-bottom:8px;}
+  .action-btn .label{font-weight:600;font-size:0.82rem;}
+  .action-btn:hover{border-color:var(--lime);}
+
+  .status-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;}
+  .status-card .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:0.68rem;padding:5px 11px;border-radius:100px;display:inline-flex;align-items:center;gap:5px;}
+  .pill.active{background:rgba(180,255,57,0.1);color:var(--lime);}
+  .pill.paused,.pill.past_due{background:rgba(224,47,47,0.1);color:#ff6b6b;}
+  .tier-badge{display:inline-flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--gold);font-size:0.95rem;}
+  .stat-mini-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:14px;}
+  .stat-mini{background:var(--card);padding:12px;text-align:center;}
+  .stat-mini b{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.15rem;}
+  .stat-mini span{font-size:0.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  .paused-banner{background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);border-radius:12px;padding:16px;margin-bottom:16px;font-size:0.85rem;color:#ff9b9b;}
+  .paused-banner button{margin-top:10px;}
+
+  .claim-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;max-height:340px;overflow-y:auto;}
+  .claim-item{background:#08080a;border:1px solid var(--line);border-radius:10px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;}
+  .claim-item button{background:var(--lime);color:#08080a;font-size:0.75rem;font-weight:600;padding:7px 13px;border-radius:100px;}
+
+  .step-header{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+  .step-dot{width:26px;height:26px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+  .step-dot.done{background:var(--lime);color:#08080a;border-color:var(--lime);}
+  .step-line{flex:1;height:1px;background:var(--line);}
+
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .type-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 14px;text-align:center;color:var(--ink);}
+  .type-card.selected{border-color:var(--lime);background:rgba(180,255,57,0.06);}
+  .type-card .emoji{font-size:1.5rem;display:block;margin-bottom:8px;}
+  .type-card .label{font-size:0.8rem;font-weight:600;}
+
+  .upload-zone{border:1.5px dashed var(--line);border-radius:14px;padding:36px 20px;text-align:center;cursor:pointer;margin-bottom:14px;}
+  .upload-zone.has-image{padding:0;border-style:solid;overflow:hidden;}
+  .upload-zone img{width:100%;display:block;max-height:260px;object-fit:cover;}
+  .upload-zone .prompt{color:var(--muted);font-size:0.85rem;}
+  .upload-zone .prompt .emoji{font-size:1.8rem;display:block;margin-bottom:10px;}
+  .img-actions{display:flex;gap:8px;margin-top:10px;}
+  .img-actions button{flex:1;background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:9px;font-size:0.78rem;}
+
+  .ai-block{background:var(--card);border:1px solid rgba(139,47,224,0.3);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .ai-block .tag{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#c397f5;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+  .ai-block .gen-text{font-size:0.9rem;line-height:1.5;white-space:pre-wrap;}
+  .ai-block .gen-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;margin:12px 0 4px;}
+  .ai-block .gen-label:first-child{margin-top:0;}
+  .ai-actions{display:flex;gap:8px;margin-top:14px;}
+  .ai-actions button{flex:1;font-size:0.78rem;padding:10px;border-radius:8px;}
+
+  .preview-card{background:linear-gradient(160deg,#141416,#0c0c0e);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:16px;}
+  .preview-card img{width:100%;display:block;max-height:220px;object-fit:cover;}
+  .preview-body{padding:20px;}
+  .preview-body .biz{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--lime);margin-bottom:6px;}
+  .preview-body h3{font-size:1.2rem;margin-bottom:8px;}
+  .preview-body p{color:var(--muted);font-size:0.85rem;line-height:1.5;margin-bottom:10px;}
+  .preview-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .preview-meta span{font-family:'JetBrains Mono',monospace;font-size:0.68rem;background:#08080a;border:1px solid var(--line);padding:4px 10px;border-radius:100px;color:var(--muted);}
+  .cta-preview{background:var(--lime);color:#08080a;text-align:center;padding:11px;border-radius:8px;font-weight:600;font-size:0.85rem;}
+  .qr-preview{text-align:center;margin-top:16px;}
+  .qr-preview img{width:120px;height:120px;border-radius:8px;background:#fff;padding:8px;}
+
+  .wizard-nav{display:flex;gap:10px;margin-top:20px;}
+  .wizard-nav button{flex:1;padding:14px;border-radius:8px;font-size:0.88rem;font-weight:600;}
+
+  .promo-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px;margin-bottom:10px;display:flex;gap:12px;}
+  .promo-row img{width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#1a1a1c;}
+  .promo-row .content{flex:1;min-width:0;}
+  .promo-row h4{font-size:0.9rem;margin-bottom:3px;}
+  .promo-row .status-line{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .promo-row .mini-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .promo-row .mini-actions button{background:#08080a;border:1px solid var(--line);color:var(--muted);font-size:0.68rem;padding:5px 9px;border-radius:100px;}
+
+  .empty-state{text-align:center;padding:50px 20px;color:var(--muted);font-size:0.88rem;}
+
+  .analytics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px;}
+  .analytics-box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .analytics-box b{display:block;font-size:1.4rem;font-family:'Space Grotesk',sans-serif;}
+  .analytics-box span{font-size:0.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  .feature-locked{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:28px 20px;text-align:center;color:var(--muted);font-size:0.85rem;}
+  .feature-locked .lock-emoji{font-size:1.6rem;display:block;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="badge-avatar">R</div>
+    <h1 id="login-title">Founding Partner Sign In</h1>
+    <p id="login-sub">Your promotional command center. Reesee's waiting on the other side.</p>
+    <div class="field"><label>Email</label><input type="email" id="auth-email" autocomplete="email"></div>
+    <div class="field"><label>Password</label><input type="password" id="auth-password" autocomplete="current-password"></div>
+    <button class="btn btn-primary" id="signin-btn">Sign In</button>
+    <button class="btn btn-ghost" id="signup-btn" style="display:none;">Create Account</button>
+    <div class="toggle-row"><button id="auth-toggle">First time? Create your account</button></div>
+    <div class="msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div id="app-shell">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>LOCALS GO · PARTNER</div>
+    <button id="logout-btn">Sign Out</button>
+  </div>
+
+  <div class="screen active" id="screen-home">
+    <div class="reesee-intro">
+      <div class="avatar-row"><div class="av">R</div><b>Reesee</b></div>
+      <p id="reesee-greeting">Hey! I'm Reesee. I'll help you create your promotion — you don't have to figure it all out yourself. Just tap what you want to do.</p>
+      <div class="action-grid">
+        <button class="action-btn" data-goto="wizard" data-type="special"><span class="emoji">🎯</span><span class="label">Create My Promotion</span></button>
+        <button class="action-btn" data-goto="wizard" data-type="coupon"><span class="emoji">📣</span><span class="label">Create an Ad</span></button>
+        <button class="action-btn" data-goto="wizard" data-type="special"><span class="emoji">✨</span><span class="label">Create a Special</span></button>
+        <button class="action-btn" data-goto="loyalty"><span class="emoji">🎁</span><span class="label">Loyalty Reward</span></button>
+        <button class="action-btn" data-goto="wizard" data-type="event"><span class="emoji">📅</span><span class="label">Promote My Event</span></button>
+        <button class="action-btn" data-goto="wizard" data-type="announcement"><span class="emoji">📢</span><span class="label">New Announcement</span></button>
+      </div>
+    </div>
+
+    <div id="paused-banner-wrap"></div>
+
+    <div class="status-card">
+      <div class="head">
+        <div class="tier-badge">🏆 <span id="tier-name-display">—</span></div>
+        <span class="pill" id="status-pill">—</span>
+      </div>
+      <div class="muted" style="font-size:0.8rem;" id="business-name-display">—</div>
+      <div class="stat-mini-row">
+        <div class="stat-mini"><b id="mini-active">—</b><span>ACTIVE</span></div>
+        <div class="stat-mini"><b id="mini-views">—</b><span>VIEWS</span></div>
+        <div class="stat-mini"><b id="mini-scans">—</b><span>QR SCANS</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-claim">
+    <h2 style="margin-bottom:8px;">Which business is yours?</h2>
+    <p class="muted" style="font-size:0.85rem;">Reesee needs to link your account to your Founding Partner listing.</p>
+    <div class="claim-list" id="claim-list"></div>
+  </div>
+
+  <div class="screen" id="screen-wizard">
+    <div id="wizard-step-1">
+      <h2 style="margin-bottom:16px;">What are you promoting?</h2>
+      <div class="type-grid" id="type-grid">
+        <div class="type-card" data-type="business"><span class="emoji">🏪</span><span class="label">Business</span></div>
+        <div class="type-card" data-type="product"><span class="emoji">📦</span><span class="label">Product</span></div>
+        <div class="type-card" data-type="service"><span class="emoji">🛠️</span><span class="label">Service</span></div>
+        <div class="type-card" data-type="special"><span class="emoji">✨</span><span class="label">Special</span></div>
+        <div class="type-card" data-type="coupon"><span class="emoji">🎟️</span><span class="label">Coupon</span></div>
+        <div class="type-card" data-type="event"><span class="emoji">📅</span><span class="label">Event</span></div>
+        <div class="type-card" data-type="loyalty_reward"><span class="emoji">🎁</span><span class="label">Loyalty Reward</span></div>
+        <div class="type-card" data-type="announcement"><span class="emoji">📢</span><span class="label">Announcement</span></div>
+      </div>
+      <div class="wizard-nav"><button class="btn-primary" style="flex:1;padding:14px;border-radius:8px;font-weight:600;" id="step1-next">Next</button></div>
+    </div>
+
+    <div id="wizard-step-2" style="display:none;">
+      <h2 style="margin-bottom:16px;">Tell me about your offer.</h2>
+      <div class="field"><label>What are you offering?</label><input type="text" id="w-offer" placeholder="e.g. 20% off haircuts this week"></div>
+      <div class="field"><label>Price (optional)</label><input type="text" id="w-price" placeholder="e.g. $25"></div>
+      <div class="field"><label>Discount (optional)</label><input type="text" id="w-discount" placeholder="e.g. 20% off"></div>
+      <div class="field"><label>Expires (optional)</label><input type="date" id="w-expiration"></div>
+      <div class="field"><label>Who's it for? (optional)</label><input type="text" id="w-audience" placeholder="e.g. New customers"></div>
+      <div class="field"><label>What should customers do next?</label>
+        <select id="w-cta">
+          <option>Visit Us Today</option>
+          <option>Claim Your Offer</option>
+          <option>Shop Now</option>
+          <option>Book Now</option>
+          <option>Learn More</option>
+          <option>Scan to Redeem</option>
+        </select>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-ghost" id="step2-back">Back</button>
+        <button class="btn-primary" id="step2-next">Next: Add a Photo</button>
+      </div>
+    </div>
+
+    <div id="wizard-step-3" style="display:none;">
+      <h2 style="margin-bottom:16px;">Add a photo.</h2>
+      <div class="upload-zone" id="upload-zone">
+        <div class="prompt" id="upload-prompt"><span class="emoji">📸</span>Tap to upload a photo from your phone</div>
+      </div>
+      <input type="file" id="image-input" accept="image/*" style="display:none;">
+      <div class="img-actions" id="img-actions" style="display:none;">
+        <button id="replace-img-btn">Replace</button>
+        <button id="remove-img-btn">Remove</button>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-ghost" id="step3-back">Back</button>
+        <button class="btn-primary" id="step3-next">Next: Let Reesee Write It</button>
+      </div>
+    </div>
+
+    <div id="wizard-step-4" style="display:none;">
+      <h2 style="margin-bottom:16px;">Reesee's writing your promotion.</h2>
+      <div class="ai-block" id="ai-block">
+        <div class="tag">🤖 Reesee AI</div>
+        <div id="ai-loading" class="muted" style="font-size:0.85rem;">Thinking…</div>
+        <div id="ai-content" style="display:none;">
+          <div class="gen-label">Headline</div><div class="gen-text" id="gen-headline"></div>
+          <div class="gen-label">Description</div><div class="gen-text" id="gen-description"></div>
+          <div class="gen-label">Social Caption</div><div class="gen-text" id="gen-caption"></div>
+          <div class="gen-label">Short Version</div><div class="gen-text" id="gen-short"></div>
+        </div>
+      </div>
+      <div class="ai-actions">
+        <button class="btn-ghost" id="regenerate-btn" style="border:1px solid var(--line);border-radius:8px;">Generate Again</button>
+        <button class="btn-primary" id="approve-ai-btn" style="border-radius:8px;">Approve</button>
+      </div>
+      <div class="wizard-nav"><button class="btn-ghost" id="step4-back">Back</button></div>
+    </div>
+
+    <div id="wizard-step-5" style="display:none;">
+      <h2 style="margin-bottom:16px;">Your Promotion</h2>
+      <div class="preview-card">
+        <img id="preview-img" style="display:none;">
+        <div class="preview-body">
+          <div class="biz" id="preview-biz"></div>
+          <h3 i
