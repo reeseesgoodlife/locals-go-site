@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Start a Campaign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#08080a;--card:#101113;--lime:#B4FF39;--purple:#8B2FE0;--ink:#F2F2ED;--muted:#8A8A93;--line:rgba(242,242,237,0.09);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:560px;margin:0 auto;padding:24px 18px 60px;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;}
+  .muted{color:var(--muted);}
+  button{font-family:'Space Grotesk',sans-serif;cursor:pointer;border:none;}
+
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;}
+  .avatar{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--lime),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;color:#08080a;margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .field input,.field select,.field textarea{width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;padding:12px 13px;color:var(--ink);font-size:0.9rem;outline:none;}
+  .field input:focus{border-color:var(--lime);}
+  .btn{width:100%;font-weight:600;font-size:0.9rem;border-radius:8px;padding:14px;margin-top:6px;}
+  .btn-primary{background:var(--lime);color:#08080a;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .toggle-row{text-align:center;margin-top:16px;}
+  .toggle-row button{background:none;color:var(--muted);font-size:0.8rem;text-decoration:underline;font-family:'Inter',sans-serif;}
+  .msg{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:0.82rem;display:none;}
+  .msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .msg.ok{display:block;background:rgba(180,255,57,0.08);border:1px solid rgba(180,255,57,0.3);color:var(--lime);}
+
+  #app{display:none;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#c397f5;letter-spacing:0.06em;margin-bottom:10px;}
+  .step-hero{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;}
+  .reesee-line{display:flex;gap:10px;align-items:flex-start;margin-bottom:4px;}
+  .reesee-line .av{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--lime),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;color:#08080a;flex-shrink:0;font-size:0.8rem;}
+  .reesee-line p{font-size:0.87rem;color:var(--muted);line-height:1.5;}
+
+  .video-preview{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+  .video-preview img{width:100%;display:block;}
+  .video-preview .body{padding:14px 16px;}
+  .video-preview .body b{font-size:0.95rem;}
+  .video-preview .body span{display:block;font-size:0.78rem;color:var(--muted);margin-top:3px;}
+
+  .type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+  .chip-select{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;font-size:0.75rem;color:var(--ink);}
+  .chip-select.selected{border-color:var(--lime);background:rgba(180,255,57,0.06);}
+
+  .audience-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .audience-chip{background:var(--card);border:1px solid var(--line);border-radius:100px;padding:8px 14px;font-size:0.78rem;color:var(--ink);}
+  .audience-chip.selected{border-color:#c397f5;background:rgba(139,47,224,0.1);color:#c397f5;}
+
+  .ai-block{background:var(--card);border:1px solid rgba(139,47,224,0.3);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .ai-block .tag{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#c397f5;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;}
+  .gen-label{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;margin:12px 0 4px;}
+  .gen-label:first-child{margin-top:0;}
+  .gen-text{font-size:0.9rem;line-height:1.5;white-space:pre-wrap;}
+
+  .share-card{background:linear-gradient(160deg,#141416,#0c0c0e);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:16px;}
+  .share-card img{width:100%;display:block;max-height:220px;object-fit:cover;}
+  .share-card .body{padding:18px;}
+  .share-card .locals-tag{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--lime);margin-bottom:6px;}
+  .share-card h3{font-size:1.1rem;margin-bottom:6px;}
+  .share-card p{color:var(--muted);font-size:0.84rem;line-height:1.5;margin-bottom:10px;}
+  .share-card .cta{background:var(--lime);color:#08080a;text-align:center;padding:11px;border-radius:8px;font-weight:600;font-size:0.85rem;}
+
+  .wizard-nav{display:flex;gap:10px;margin-top:20px;}
+  .wizard-nav button{flex:1;padding:14px;border-radius:8px;font-size:0.88rem;font-weight:600;}
+  .step{display:none;}
+  .step.active{display:block;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="avatar">R</div>
+    <h1 style="font-size:1.2rem;margin-bottom:6px;">Start a Campaign</h1>
+    <p class="muted" style="font-size:0.85rem;margin-bottom:20px;">Sign in with your Founding Partner account.</p>
+    <div class="field"><label>Email</label><input type="email" id="auth-email"></div>
+    <div class="field"><label>Password</label><input type="password" id="auth-password"></div>
+    <button class="btn btn-primary" id="signin-btn">Sign In</button>
+    <div class="msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <div class="eyebrow">// 🔥 VIRAL SHARE NETWORK</div>
+    <h1 style="font-size:1.5rem;margin-bottom:20px;">Turn one video into a community campaign.</h1>
+
+    <div class="step active" id="step-1">
+      <div class="step-hero">
+        <div class="reesee-line"><div class="av">R</div><p>Drop in your YouTube link and I'll build the campaign with you.</p></div>
+      </div>
+      <div class="field"><label>YouTube URL</label><input type="url" id="yt-url" placeholder="https://youtube.com/watch?v=..."></div>
+      <div id="video-preview-wrap"></div>
+      <div class="msg" id="step1-msg"></div>
+      <div class="wizard-nav"><button class="btn-primary" id="step1-next">Next</button></div>
+    </div>
+
+    <div class="step" id="step-2">
+      <h2 style="font-size:1.1rem;margin-bottom:14px;">Campaign settings</h2>
+      <div class="field"><label>Category</label>
+        <select id="c-category">
+          <option>Local Business</option><option>Event</option><option>Entertainment</option>
+          <option>Food</option><option>Community</option><option>Entrepreneurship</option><option>Creator</option><option>Shopping</option>
+        </select>
+      </div>
+      <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Campaign Length</label>
+      <div class="type-grid" id="length-grid">
+        <div class="chip-select" data-days="1">1 day</div>
+        <div class="chip-select" data-days="3">3 days</div>
+        <div class="chip-select selected" data-days="7">7 days</div>
+        <div class="chip-select" data-days="14">14 days</div>
+        <div class="chip-select" data-days="30">30 days</div>
+      </div>
+      <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Target Audience</label>
+      <div class="audience-grid" id="audience-grid"></div>
+      <div class="wizard-nav">
+        <button class="btn-ghost" id="step2-back">Back</button>
+        <button class="btn-primary" id="step2-next">Next: Let Reesee Write It</button>
+      </div>
+    </div>
+
+    <div class="step" id="step-3">
+      <h2 style="font-size:1.1rem;margin-bottom:14px;">Reesee's building your campaign.</h2>
+      <div class="ai-block">
+        <div class="tag">🤖 Reesee AI</div>
+        <div id="ai-loading" class="muted" style="font-size:0.85rem;">Thinking…</div>
+        <div id="ai-content" style="display:none;">
+          <div class="gen-label">Campaign Headline</div><div class="gen-text" id="gen-headline"></div>
+          <div class="gen-label">Short Description</div><div class="gen-text" id="gen-description"></div>
+          <div class="gen-label">Share Message</div><div class="gen-text" id="gen-share-msg"></div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-ghost" id="regenerate-btn">Generate Again</button>
+        <button class="btn-primary" id="step3-next">Approve</button>
+      </div>
+    </div>
+
+    <div class="step" id="step-4">
+      <h2 style="font-size:1.1rem;margin-bottom:14px;">Your Campaign Share Card</h2>
+      <div class="share-card">
+        <img id="preview-img">
+        <div class="body">
+          <div class="locals-tag">DISCOVERED THROUGH LOCALS GO</div>
+          <h3 id="preview-headline"></h3>
+          <p id="preview-description"></p>
+          <div class="cta" id="preview-cta">Watch Now</div>
+        </div>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn-ghost" id="step4-back">← Edit</button>
+        <button class="btn-primary" id="launch-btn">🚀 Submit Campaign</button>
+      </div>
+      <div class="msg" id="launch-msg"></div>
+      <p class="muted" style="font-size:0.78rem;margin-top:12px;">Campaigns are reviewed before going live in the Share Network — Reesee will let your admin know it's ready to approve.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AUDIENCES = ["Local community","Small businesses","Entrepreneurs","Food","Events","Shopping","Entertainment","Families","Creators","Organizations"];
+document.getElementById('audience-grid').innerHTML = AUDIENCES.map(a => `<div class="audience-chip" data-a="${a}">${a}</div>`).join('');
+
+let currentBusiness = null;
+let currentTierPrice = 0;
+let videoData = null;
+let campaignState = { lengthDays: 7, audience: [], category: 'Local Business', headline:'', description:'', shareMsg:'' };
+
+document.getElementById('signin-btn').onclick = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  const msgEl = document.getElementById('auth-msg');
+  if (error) { msgEl.textContent = error.message; msgEl.className = 'msg err'; return; }
+  await boot();
+};
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+  const { data: biz } = await sb.from('lg_businesses').select('*').eq('owner_user_id', session.user.id).maybeSingle();
+  if (!biz) { document.getElementById('auth-msg').textContent = 'No business linked to this account yet.'; document.getElementById('auth-msg').className='msg err'; return; }
+  currentBusiness = biz;
+  const { data: partner } = await sb.from('lg_founding_partners').select('*, lg_tiers(price)').eq('business_id', biz.id).maybeSingle();
+  currentTierPrice = partner?.lg_tiers?.price || 0;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step-${n}`).classList.add('active');
+}
+
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/);
+  return m ? m[1] : null;
+}
+
+document.getElementById('step1-next').onclick = async () => {
+  const url = document.getElementById('yt-url').value.trim();
+  const msgEl = document.getElementById('step1-msg');
+  msgEl.style.display = 'none';
+  const vid = extractYouTubeId(url);
+  if (!vid) { msgEl.textContent = 'Please enter a valid YouTube link.'; msgEl.className = 'msg err'; return; }
+
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    videoData = { url, videoId: vid, title: data.title, channel: data.author_name, thumbnail: `https://img.youtube.com/vi/${vid}/hqdefault.jpg` };
+    document.getElementById('video-preview-wrap').innerHTML = `
+      <div class="video-preview">
+        <img src="${videoData.thumbnail}">
+        <div class="body"><b>${escapeHtml(videoData.title)}</b><span>${escapeHtml(videoData.channel)}</span></div>
+      </div>`;
+    showStep(2);
+  } catch (err) {
+    msgEl.textContent = "Couldn't load that video — check the link and try again.";
+    msgEl.className = 'msg err';
+  }
+};
+
+document.querySelectorAll('#length-grid .chip-select').forEach(chip => {
+  chip.onclick = () => {
+    document.querySelectorAll('#length-grid .chip-select').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    campaignState.lengthDays = parseInt(chip.dataset.days);
+  };
+});
+document.querySelectorAll('#audience-grid .audience-chip').forEach(chip => {
+  chip.onclick = () => {
+    chip.classList.toggle('selected');
+    campaignState.audience = Array.from(document.querySelectorAll('#audience-grid .audience-chip.selected')).map(c => c.dataset.a);
+  };
+});
+document.getElementById('step2-back').onclick = () => showStep(1);
+document.getElementById('step2-next').onclick = () => {
+  campaignState.category = document.getElementById('c-category').value;
+  showStep(3);
+  generateCampaignCopy();
+};
+
+async function generateCampaignCopy() {
+  document.getElementById('ai-loading').style.display = 'block';
+  document.getElementById('ai-content').style.display = 'none';
+  const prompt = `You are Reesee, a friendly campaign assistant for Locals Go's Viral Share Network. A Founding Partner wants to share this YouTube video with the community:
+
+Title: ${videoData.title}
+Channel: ${videoData.channel}
+Category: ${campaignState.category}
+Business sharing it: ${currentBusiness.name}
+
+Write a short community-sharing campaign. Respond ONLY in this exact JSON format, no markdown:
+{"headline":"catchy campaign headline under 10 words, e.g. Check out this new local feature!","description":"1-2 sentence description encouraging people to watch","share_message":"a warm 1-sentence message a member could send a friend, e.g. This video caught my attention and I thought you might enjoy it. Check it out!"}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    let parsed;
+    try { parsed = JSON.parse(textBlock.text.replace(/```json|```/g,'').trim()); }
+    catch { parsed = { headline: videoData.title, description: 'Check out this video!', share_message: 'Thought you might enjoy this — check it out!' }; }
+
+    campaignState.headline = parsed.headline;
+    campaignState.description = parsed.description;
+    campaignState.shareMsg = parsed.share_message;
+
+    document.getElementById('gen-headline').textContent = parsed.headline;
+    document.getElementById('gen-description').textContent = parsed.description;
+    document.getElementById('gen-share-msg').textContent = parsed.share_message;
+    document.getElementById('ai-loading').style.display = 'none';
+    document.getElementById('ai-content').style.display = 'block';
+  } catch (err) {
+    document.getElementById('ai-loading').textContent = "Couldn't generate copy — try again.";
+  }
+}
+document.getElementById('regenerate-btn').onclick = generateCampaignCopy;
+document.getElementById('step3-next').onclick = () => {
+  document.getElementById('preview-img').src = videoData.thumbnail;
+  document.getElementById('preview-headline').textContent = campaignState.headline;
+  document.getElementById('preview-description').textContent = campaignState.description;
+  showStep(4);
+};
+document.getElementById('step4-back').onclick = () => showStep(3);
+
+document.getElementById('launch-btn').onclick = async () => {
+  const btn = document.getElementById('launch-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  const msgEl = document.getElementById('launch-msg');
+
+  const slug = (videoData.videoId + '-' + Math.random().toString(36).slice(2,7)).toLowerCase();
+  const endDate = new Date(Date.now() + campaignState.lengthDays * 86400000).toISOString().split('T')[0];
+
+  try {
+    const { error } = await sb.from('lg_campaigns').insert({
+      business_id: currentBusiness.id,
+      content_url: videoData.url,
+      content_type: 'youtube',
+      video_title: videoData.title,
+      channel_name: videoData.channel,
+      thumbnail_url: videoData.thumbnail,
+      headline: campaignState.headline,
+      description: campaignState.description,
+      share_message: campaignState.shareMsg,
+      category: campaignState.category,
+      target_audience: campaignState.audience,
+      tracking_slug: slug,
+      tier_priority: currentTierPrice,
+      status: 'pending',
+      end_date: endDate
+    });
+    if (error) throw error;
+    msgEl.textContent = "Campaign submitted! It'll go live once approved."; msgEl.className = 'msg ok';
+    btn.textContent = 'Submitted';
+  } catch (err) {
+    msgEl.textContent = 'Something went wrong — try again.'; msgEl.className = 'msg err';
+    btn.disabled = false; btn.textContent = '🚀 Submit Campaign';
+  }
+};
+
+boot();
+</script>
+</body>
+</html>
