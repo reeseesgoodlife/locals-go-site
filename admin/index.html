@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#08080a;--card:#101113;--lime:#B4FF39;--purple:#8B2FE0;--gold:#F2C94C;--ink:#F2F2ED;--muted:#8A8A93;--line:rgba(242,242,237,0.09);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;}
+  button{font-family:'Space Grotesk',sans-serif;cursor:pointer;border:none;}
+  input,select,textarea{font-family:'Inter',sans-serif;}
+  .muted{color:var(--muted);}
+
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:32px 28px;}
+  .avatar{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--gold),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;color:#08080a;margin-bottom:16px;}
+  .login-card h1{font-size:1.2rem;margin-bottom:6px;}
+  .login-card p{color:var(--muted);font-size:0.85rem;margin-bottom:20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .field input,.field select{width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;padding:11px 13px;color:var(--ink);font-size:0.9rem;outline:none;}
+  .field input:focus{border-color:var(--gold);}
+  .btn{width:100%;font-weight:600;font-size:0.9rem;border-radius:8px;padding:13px;margin-top:6px;}
+  .btn-primary{background:var(--gold);color:#08080a;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
+  .toggle-row{text-align:center;margin-top:16px;}
+  .toggle-row button{background:none;color:var(--muted);font-size:0.8rem;text-decoration:underline;font-family:'Inter',sans-serif;}
+  .msg{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:0.82rem;display:none;}
+  .msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .msg.ok{display:block;background:rgba(180,255,57,0.08);border:1px solid rgba(180,255,57,0.3);color:var(--lime);}
+
+  #app{display:none;}
+  header{border-bottom:1px solid var(--line);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(8,8,10,0.92);backdrop-filter:blur(8px);z-index:20;}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;}
+  .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+  #logout{background:none;color:var(--muted);border:1px solid var(--line);border-radius:100px;padding:7px 13px;font-size:0.72rem;font-family:'JetBrains Mono',monospace;}
+
+  .tabs{display:flex;gap:6px;padding:16px 24px 0;overflow-x:auto;border-bottom:1px solid var(--line);}
+  .tab{background:none;color:var(--muted);padding:10px 16px;font-size:0.82rem;font-weight:600;border-bottom:2px solid transparent;white-space:nowrap;}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+  main{max-width:1100px;margin:0 auto;padding:28px 24px 60px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:28px;}
+  @media (max-width:700px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-box{background:var(--bg);padding:20px;}
+  .stat-box b{display:block;font-size:1.6rem;font-family:'Space Grotesk',sans-serif;}
+  .stat-box span{font-size:0.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:0.85rem;}
+  th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;padding:11px 13px;border-bottom:1px solid var(--line);}
+  td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  select.inline-select{background:#08080a;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:6px 8px;font-size:0.78rem;}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:0.62rem;padding:3px 9px;border-radius:100px;display:inline-block;}
+  .badge.active{background:rgba(180,255,57,0.1);color:var(--lime);}
+  .badge.past_due,.badge.paused,.badge.rejected{background:rgba(224,47,47,0.1);color:#ff6b6b;}
+  .badge.draft,.badge.pending,.badge.canceled,.badge.expired{background:rgba(139,47,224,0.12);color:#c397f5;}
+  .mini-btn{background:#08080a;border:1px solid var(--line);color:var(--muted);font-size:0.68rem;padding:5px 9px;border-radius:100px;margin-right:4px;}
+
+  .section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .add-form{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:20px;display:none;}
+  .add-form.open{display:block;}
+  .add-form .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .toggle-add-btn{background:var(--gold);color:#08080a;font-weight:600;font-size:0.8rem;padding:9px 15px;border-radius:100px;}
+
+  .empty{color:var(--muted);font-size:0.85rem;padding:24px;text-align:center;}
+
+  .feature-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);}
+  .feature-toggle-row:last-child{border-bottom:none;}
+  .switch{width:38px;height:22px;border-radius:100px;background:var(--line);position:relative;cursor:pointer;flex-shrink:0;}
+  .switch.on{background:var(--lime);}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left 0.15s ease;}
+  .switch.on::after{left:18px;}
+  .tier-block{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .tier-block .tier-title{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--gold);margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="avatar">A</div>
+    <h1 id="login-title">Locals Go Admin</h1>
+    <p id="login-sub">Sign in to manage businesses, tiers, and promotions.</p>
+    <div class="field"><label>Email</label><input type="email" id="auth-email"></div>
+    <div class="field"><label>Password</label><input type="password" id="auth-password"></div>
+    <button class="btn btn-primary" id="signin-btn">Sign In</button>
+    <button class="btn btn-ghost" id="signup-btn" style="display:none;">Create Account</button>
+    <div class="toggle-row"><button id="auth-toggle">First time? Create an account</button></div>
+    <div class="msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="brand"><span class="dot"></span>LOCALS GO · ADMIN</div>
+    <button id="logout">Sign Out</button>
+  </header>
+  <div class="tabs">
+    <button class="tab active" data-panel="overview">Overview</button>
+    <button class="tab" data-panel="businesses">Businesses</button>
+    <button class="tab" data-panel="partners">Founding Partners</button>
+    <button class="tab" data-panel="promotions">Promotions</button>
+    <button class="tab" data-panel="campaigns">Campaigns</button>
+    <button class="tab" data-panel="tiers">Tiers &amp; Features</button>
+    <button class="tab" data-panel="loyalty">Loyalty Programs</button>
+  </div>
+
+  <main>
+    <div class="panel active" id="panel-overview">
+      <div class="stats-row" id="overview-stats"></div>
+      <h3 style="margin-bottom:12px;">Recent Promotions</h3>
+      <div id="overview-recent"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-businesses">
+      <div class="section-head"><h2>Businesses</h2><button class="toggle-add-btn" id="toggle-add-business">+ Add Business</button></div>
+      <div class="add-form" id="add-business-form">
+        <div class="field-row">
+          <div class="field"><label>Name</label><input type="text" id="nb-name"></div>
+          <div class="field"><label>Category</label><input type="text" id="nb-category"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Slug</label><input type="text" id="nb-slug" placeholder="unique-slug"></div>
+          <div class="field"><label>City</label><input type="text" id="nb-city" value="Lawton"></div>
+        </div>
+        <button class="btn btn-primary" id="save-business-btn" style="width:auto;padding:10px 20px;">Save Business</button>
+        <div class="msg" id="business-msg"></div>
+      </div>
+      <div id="businesses-table"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-partners">
+      <h2 style="margin-bottom:14px;">Founding Partners</h2>
+      <div id="partners-table"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-promotions">
+      <h2 style="margin-bottom:14px;">Promotions Moderation</h2>
+      <div id="promotions-table"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-campaigns">
+      <h2 style="margin-bottom:14px;">🔥 Viral Share Network — Campaign Moderation</h2>
+      <div id="campaigns-table"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-tiers">
+      <h2 style="margin-bottom:14px;">Tiers &amp; Feature Access</h2>
+      <div id="tiers-content"><div class="empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" id="panel-loyalty">
+      <h2 style="margin-bottom:14px;">Loyalty Programs</h2>
+      <div id="loyalty-table"><div class="empty">Loading…</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str||''; return d.innerHTML; }
+
+let isSignupMode = false;
+document.getElementById('auth-toggle').onclick = () => {
+  isSignupMode = !isSignupMode;
+  document.getElementById('signin-btn').style.display = isSignupMode ? 'none' : 'block';
+  document.getElementById('signup-btn').style.display = isSignupMode ? 'block' : 'none';
+  document.getElementById('auth-toggle').textContent = isSignupMode ? 'Already have an account? Sign in' : 'First time? Create an account';
+};
+function showAuthMsg(t,c){ const el=document.getElementById('auth-msg'); el.textContent=t; el.className=`msg ${c}`; }
+
+document.getElementById('signin-btn').onclick = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) showAuthMsg(error.message, 'err'); else boot();
+};
+document.getElementById('signup-btn').onclick = async () => {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (password.length < 8) { showAuthMsg('Password must be at least 8 characters.', 'err'); return; }
+  const { error } = await sb.auth.signUp({ email, password });
+  if (error) showAuthMsg(error.message, 'err');
+  else showAuthMsg('Account created. Check your email to confirm, then sign in.', 'ok');
+};
+document.getElementById('logout').onclick = async () => {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+};
+
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return;
+
+  const { data: isAdmin, error } = await sb.rpc('claim_first_admin');
+  if (error || !isAdmin) {
+    showAuthMsg("This account doesn't have admin access. Ask an existing admin to add you.", 'err');
+    await sb.auth.signOut();
+    return;
+  }
+
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadOverview();
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(`panel-${tab.dataset.panel}`).classList.add('active');
+    if (tab.dataset.panel === 'businesses') loadBusinesses();
+    if (tab.dataset.panel === 'partners') loadPartners();
+    if (tab.dataset.panel === 'promotions') loadPromotionsAdmin();
+    if (tab.dataset.panel === 'campaigns') loadCampaignsAdmin();
+    if (tab.dataset.panel === 'tiers') loadTiers();
+    if (tab.dataset.panel === 'loyalty') loadLoyaltyAdmin();
+  };
+});
+
+async function loadOverview() {
+  const [{ count: bizCount }, { count: partnerCount }, { count: promoCount }, { data: recentPromos }] = await Promise.all([
+    sb.from('lg_businesses').select('*', { count: 'exact', head: true }),
+    sb.from('lg_founding_partners').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    sb.from('lg_promotions').select('*', { count: 'exact', head: true }),
+    sb.from('lg_promotions').select('*, lg_businesses(name)').order('created_at', { ascending: false }).limit(8)
+  ]);
+
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-box"><b>${bizCount ?? '—'}</b><span>TOTAL BUSINESSES</span></div>
+    <div class="stat-box"><b>${partnerCount ?? '—'}</b><span>ACTIVE PARTNERS</span></div>
+    <div class="stat-box"><b>${promoCount ?? '—'}</b><span>TOTAL PROMOTIONS</span></div>
+    <div class="stat-box"><b>${(recentPromos||[]).filter(p=>p.status==='active').length}</b><span>LIVE RIGHT NOW</span></div>
+  `;
+
+  const el = document.getElementById('overview-recent');
+  if (!recentPromos || recentPromos.length === 0) { el.innerHTML = '<div class="empty">No promotions yet.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Title</th><th>Business</th><th>Type</th><th>Status</th></tr></thead><tbody>
+    ${recentPromos.map(p => `<tr><td>${escapeHtml(p.title)}</td><td>${escapeHtml(p.lg_businesses?.name||'—')}</td><td>${escapeHtml(p.promo_type)}</td><td><span class="badge ${p.status}">${p.status}</span></td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+document.getElementById('toggle-add-business').onclick = () => {
+  document.getElementById('add-business-form').classList.toggle('open');
+};
+document.getElementById('save-business-btn').onclick = async () => {
+  const name = document.getElementById('nb-name').value.trim();
+  const category = document.getElementById('nb-category').value.trim();
+  const slug = document.getElementById('nb-slug').value.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+  const city = document.getElementById('nb-city').value.trim();
+  const msgEl = document.getElementById('business-msg');
+  if (!name) { msgEl.textContent = 'Name is required.'; msgEl.className = 'msg err'; return; }
+  const { error } = await sb.from('lg_businesses').insert({ name, category, slug, city, lat: 34.6087, lng: -98.3903 });
+  if (error) { msgEl.textContent = error.message; msgEl.className = 'msg err'; return; }
+  msgEl.textContent = 'Business added!'; msgEl.className = 'msg ok';
+  document.getElementById('nb-name').value=''; document.getElementById('nb-category').value=''; document.getElementById('nb-slug').value='';
+  loadBusinesses();
+};
+
+async function loadBusinesses() {
+  const { data } = await sb.from('lg_businesses').select('*').order('name');
+  const el = document.getElementById('businesses-table');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty">No businesses yet.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Name</th><th>Category</th><th>City</th><th>Claimed</th></tr></thead><tbody>
+    ${data.map(b => `<tr><td>${escapeHtml(b.name)}</td><td>${escapeHtml(b.category||'—')}</td><td>${escapeHtml(b.city||'—')}</td><td>${b.owner_user_id ? '✓' : '—'}</td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function loadPartners() {
+  const [{ data: partners }, { data: tiers }] = await Promise.all([
+    sb.from('lg_founding_partners').select('*, lg_businesses(name), lg_tiers(name)').order('created_at', { ascending: false }),
+    sb.from('lg_tiers').select('*').order('sort_order')
+  ]);
+  const el = document.getElementById('partners-table');
+  if (!partners || partners.length === 0) { el.innerHTML = '<div class="empty">No founding partners yet.</div>'; return; }
+
+  const tierOptions = tiers.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+  const statusOptions = ['active','past_due','canceled','expired'].map(s => `<option value="${s}">${s}</option>`).join('');
+
+  el.innerHTML = `<table><thead><tr><th>Business</th><th>Tier</th><th>Status</th></tr></thead><tbody>
+    ${partners.map(p => `
+      <tr>
+        <td>${escapeHtml(p.lg_businesses?.name||'—')}</td>
+        <td><select class="inline-select tier-select" data-id="${p.id}">${tierOptions}</select></td>
+        <td><select class="inline-select status-select" data-id="${p.id}">${statusOptions}</select></td>
+      </tr>`).join('')}
+  </tbody></table>`;
+
+  partners.forEach(p => {
+    el.querySelector(`.tier-select[data-id="${p.id}"]`).value = p.tier_id;
+    el.querySelector(`.status-select[data-id="${p.id}"]`).value = p.status;
+  });
+  el.querySelectorAll('.tier-select').forEach(sel => sel.onchange = async () => {
+    await sb.from('lg_founding_partners').update({ tier_id: sel.value }).eq('id', sel.dataset.id);
+  });
+  el.querySelectorAll('.status-select').forEach(sel => sel.onchange = async () => {
+    await sb.from('lg_founding_partners').update({ status: sel.value }).eq('id', sel.dataset.id);
+  });
+}
+
+async function loadPromotionsAdmin() {
+  const { data } = await sb.from('lg_promotions').select('*, lg_businesses(name)').order('created_at', { ascending: false });
+  const el = document.getElementById('promotions-table');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty">No promotions yet.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Title</th><th>Business</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${data.map(p => `
+      <tr>
+        <td>${escapeHtml(p.title)}</td>
+        <td>${escapeHtml(p.lg_businesses?.name||'—')}</td>
+        <td><span class="badge ${p.status}">${p.status}</span></td>
+        <td>
+          <button class="mini-btn" data-action="active" data-id="${p.id}">Approve</button>
+          <button class="mini-btn" data-action="paused" data-id="${p.id}">Pause</button>
+          <button class="mini-btn" data-action="rejected" data-id="${p.id}">Reject</button>
+        </td>
+      </tr>`).join('')}
+  </tbody></table>`;
+  el.querySelectorAll('.mini-btn').forEach(btn => btn.onclick = async () => {
+    await sb.from('lg_promotions').update({ status: btn.dataset.action }).eq('id', btn.dataset.id);
+    loadPromotionsAdmin();
+  });
+}
+
+async function loadTiers() {
+  const { data: tiers } = await sb.from('lg_tiers').select('*').order('sort_order');
+  const el = document.getElementById('tiers-content');
+  if (!tiers || tiers.length === 0) { el.innerHTML = '<div class="empty">No tiers set up.</div>'; return; }
+  el.innerHTML = '';
+  for (const tier of tiers) {
+    const { data: features } = await sb.from('lg_tier_features').select('*').eq('tier_id', tier.id);
+    const block = document.createElement('div');
+    block.className = 'tier-block';
+    block.innerHTML = `<div class="tier-title">🏆 ${escapeHtml(tier.name)} — $${tier.price}</div>` +
+      (features||[]).map(f => `
+        <div class="feature-toggle-row">
+          <span>${escapeHtml(f.feature_label)}</span>
+          <div class="switch ${f.enabled ? 'on' : ''}" data-id="${f.id}"></div>
+        </div>`).join('');
+    el.appendChild(block);
+  }
+  el.querySelectorAll('.switch').forEach(sw => sw.onclick = async () => {
+    const enabled = !sw.classList.contains('on');
+    sw.classList.toggle('on', enabled);
+    await sb.from('lg_tier_features').update({ enabled }).eq('id', sw.dataset.id);
+  });
+}
+
+async function loadCampaignsAdmin() {
+  const { data } = await sb.from('lg_campaigns').select('*, lg_businesses(name)').order('created_at', { ascending: false });
+  const el = document.getElementById('campaigns-table');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty">No campaigns submitted yet.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Video</th><th>Business</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${data.map(c => `
+      <tr>
+        <td>${escapeHtml(c.video_title||c.headline)}</td>
+        <td>${escapeHtml(c.lg_businesses?.name||'—')}</td>
+        <td>${escapeHtml(c.category||'—')}</td>
+        <td><span class="badge ${c.status}">${c.status}</span></td>
+        <td>
+          <button class="mini-btn" data-action="active" data-id="${c.id}">Approve</button>
+          <button class="mini-btn" data-action="paused" data-id="${c.id}">Pause</button>
+          <button class="mini-btn" data-action="rejected" data-id="${c.id}">Reject</button>
+        </td>
+      </tr>`).join('')}
+  </tbody></table>`;
+  el.querySelectorAll('.mini-btn').forEach(btn => btn.onclick = async () => {
+    await sb.from('lg_campaigns').update({ status: btn.dataset.action }).eq('id', btn.dataset.id);
+    loadCampaignsAdmin();
+  });
+}
+
+async function loadLoyaltyAdmin() {
+  const { data } = await sb.from('lg_loyalty_rewards').select('*, lg_businesses(name)').order('created_at', { ascending: false });
+  const el = document.getElementById('loyalty-table');
+  if (!data || data.length === 0) { el.innerHTML = '<div class="empty">No loyalty programs yet.</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Title</th><th>Business</th><th>Type</th><th>Status</th></tr></thead><tbody>
+    ${data.map(r => `<tr><td>${escapeHtml(r.title)}</td><td>${escapeHtml(r.lg_businesses?.name||'—')}</td><td>${escapeHtml(r.reward_type||'—')}</td><td><span class="badge ${r.status}">${r.status}</span></td></tr>`).join('')}
+  </tbody></table>`;
+}
+
+boot();
+</script>
+</body>
+</html>
