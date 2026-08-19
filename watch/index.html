@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{background:#08080a;color:#F2F2ED;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}
+</style>
+</head>
+<body>
+<p>Redirecting…</p>
+<script>
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFa[...]"
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get('c');
+  const memberCode = params.get('m');
+
+  async function go() {
+    if (!slug) { document.body.innerHTML = '<p>Invalid link.</p>'; return; }
+    const { data, error } = await sb.rpc('get_campaign_public_info', { slug });
+    if (error || !data || data.length === 0) { document.body.innerHTML = '<p>This campaign is no longer available.</p>'; return; }
+    await sb.rpc('log_campaign_click', { slug, member_code: memberCode || null });
+    window.location.replace(data[0].content_url);
+  }
+  go();
+</script>
+</body>
+</html>
