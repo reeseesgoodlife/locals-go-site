@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Join the Share Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#08080a;--card:#101113;--lime:#B4FF39;--purple:#8B2FE0;--ink:#F2F2ED;--muted:#8A8A93;--line:rgba(242,242,237,0.09);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:520px;margin:0 auto;padding:48px 20px 60px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.7rem;letter-spacing:-0.02em;margin-bottom:10px;}
+  .sub{color:var(--muted);font-size:0.92rem;line-height:1.55;margin-bottom:28px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--lime);letter-spacing:0.06em;margin-bottom:12px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
+  .field input{width:100%;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--ink);font-size:0.95rem;outline:none;}
+  .field input:focus{border-color:var(--lime);}
+  .interest-grid{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:22px;}
+  .interest-chip{background:var(--card);border:1px solid var(--line);border-radius:100px;padding:10px 16px;font-size:0.85rem;cursor:pointer;}
+  .interest-chip.selected{border-color:var(--lime);background:rgba(180,255,57,0.08);color:var(--lime);}
+  .btn{width:100%;font-family:'Space Grotesk',sans-serif;font-weight:600;background:var(--lime);color:#08080a;border:none;padding:15px;border-radius:8px;font-size:0.95rem;cursor:pointer;}
+  .btn:disabled{opacity:0.5;}
+  .msg{margin-top:14px;padding:12px 14px;border-radius:8px;font-size:0.88rem;display:none;}
+  .msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .success{display:none;text-align:center;padding:30px 20px;}
+  .success h2{font-family:'Space Grotesk',sans-serif;margin-bottom:10px;}
+  .success p{color:var(--muted);font-size:0.9rem;line-height:1.5;margin-bottom:20px;}
+  #form-view.hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="form-view">
+    <div class="eyebrow">// 🔥 SHARE NETWORK</div>
+    <h1>I want to receive share opportunities.</h1>
+    <p class="sub">Get matched with local videos, events, and business promotions worth sharing — only what fits your interests, only when you choose to share it. Never automatic, never spam.</p>
+
+    <div class="field"><label>Name</label><input type="text" id="member-name"></div>
+    <div class="field"><label>Email</label><input type="email" id="member-email"></div>
+
+    <label style="display:block;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Your Interests</label>
+    <div class="interest-grid" id="interest-grid"></div>
+
+    <button class="btn" id="join-btn">Join the Share Network</button>
+    <div class="msg" id="join-msg"></div>
+  </div>
+
+  <div class="success" id="success-view">
+    <h2>You're in!</h2>
+    <p>Reesee will start matching you with campaigns that fit your interests. Check the Share Opportunities feed anytime.</p>
+    <a href="../share-feed/" style="color:var(--lime);font-family:'JetBrains Mono',monospace;font-size:0.85rem;">Go to Share Opportunities →</a>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const INTERESTS = ["Local Businesses","Events","Entertainment","Food","Community","Entrepreneurship","Creators","Shopping"];
+  document.getElementById('interest-grid').innerHTML = INTERESTS.map(i => `<div class="interest-chip" data-i="${i}">${i}</div>`).join('');
+  document.querySelectorAll('.interest-chip').forEach(chip => chip.onclick = () => chip.classList.toggle('selected'));
+
+  function genMemberCode() {
+    return 'm-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  document.getElementById('join-btn').onclick = async () => {
+    const name = document.getElementById('member-name').value.trim();
+    const email = document.getElementById('member-email').value.trim();
+    const interests = Array.from(document.querySelectorAll('.interest-chip.selected')).map(c => c.dataset.i);
+    const msgEl = document.getElementById('join-msg');
+    msgEl.style.display = 'none';
+
+    if (!email) { msgEl.textContent = 'Email is required.'; msgEl.className = 'msg err'; return; }
+
+    const btn = document.getElementById('join-btn');
+    btn.disabled = true; btn.textContent = 'Joining…';
+
+    const memberCode = genMemberCode();
+    const { error } = await sb.from('lg_share_network_members').insert({
+      name: name || null, email, interests, member_code: memberCode
+    });
+
+    if (error) {
+      msgEl.textContent = "Something went wrong — try again."; msgEl.className = 'msg err';
+      btn.disabled = false; btn.textContent = 'Join the Share Network';
+      return;
+    }
+
+    localStorage.setItem('lg_member_code', memberCode);
+    document.getElementById('form-view').classList.add('hidden');
+    document.getElementById('success-view').style.display = 'block';
+  };
+</script>
+</body>
+</html>
