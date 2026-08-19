@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Founder Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#08080a; --card:#101113; --lime:#B4FF39; --purple:#8B2FE0;
+    --ink:#F2F2ED; --muted:#8A8A93; --line:rgba(242,242,237,0.09);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px;}
+
+  #login-screen{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .login-card{
+    width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);
+    border-radius:16px;padding:34px 30px;
+  }
+  .login-card .avatar{
+    width:44px;height:44px;border-radius:11px;margin-bottom:18px;
+    background:linear-gradient(135deg, var(--lime), var(--purple));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;color:#08080a;
+  }
+  .login-card h1{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;margin-bottom:6px;letter-spacing:-0.01em;}
+  .login-card p{color:var(--muted);font-size:0.85rem;margin-bottom:24px;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;
+  }
+  .field input{
+    width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;
+    padding:11px 13px;color:var(--ink);font-size:0.9rem;outline:none;
+  }
+  .field input:focus{border-color:var(--lime);}
+  .btn{
+    width:100%;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:0.9rem;
+    border:none;border-radius:8px;padding:13px;cursor:pointer;margin-top:6px;
+  }
+  .btn-primary{background:var(--lime);color:#08080a;}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:10px;}
+  .toggle-row{display:flex;justify-content:center;margin-top:18px;}
+  .toggle-row button{background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;text-decoration:underline;}
+  .login-msg{margin-top:14px;font-size:0.82rem;padding:10px 12px;border-radius:8px;display:none;}
+  .login-msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  .login-msg.ok{display:block;background:rgba(180,255,57,0.08);border:1px solid rgba(180,255,57,0.3);color:var(--lime);}
+
+  #dash-screen{display:none;}
+  header{border-bottom:1px solid var(--line);padding:20px 0;}
+  header .wrap{display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem;display:flex;align-items:center;gap:10px;}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--lime);}
+  #logout{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);background:none;border:1px solid var(--line);padding:7px 13px;border-radius:100px;cursor:pointer;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:28px 0;}
+  @media (max-width:720px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+  .stat-box{background:var(--bg);padding:22px 20px;}
+  .stat-box b{display:block;font-family:'Space Grotesk',sans-serif;font-size:1.7rem;}
+  .stat-box span{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);}
+
+  section{margin-bottom:36px;}
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;}
+  .refresh{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);background:none;border:1px solid var(--line);padding:6px 11px;border-radius:100px;cursor:pointer;}
+
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:0.85rem;}
+  th{
+    text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:0.04em;padding:12px 14px;border-bottom:1px solid var(--line);
+  }
+  td{padding:12px 14px;border-bottom:1px solid var(--line);color:var(--ink);}
+  tr:last-child td{border-bottom:none;}
+  .badge{
+    font-family:'JetBrains Mono',monospace;font-size:0.65rem;padding:3px 9px;border-radius:100px;
+    display:inline-block;
+  }
+  .badge.waitlist{background:rgba(180,255,57,0.1);color:var(--lime);}
+  .badge.founding_business{background:rgba(139,47,224,0.15);color:#c397f5;}
+  .empty{color:var(--muted);font-size:0.85rem;padding:24px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:10px;}
+  .loading{color:var(--muted);font-size:0.85rem;padding:24px;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="avatar">R</div>
+    <h1>Founder Dashboard</h1>
+    <p id="login-sub">Sign in to view your Locals Go funnel.</p>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="login-email" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" id="login-btn">Sign In</button>
+    <button class="btn btn-ghost" id="signup-btn" style="display:none;">Create Account</button>
+    <div class="toggle-row"><button id="toggle-mode">First time here? Create an account</button></div>
+    <div class="login-msg" id="login-msg"></div>
+  </div>
+</div>
+
+<div id="dash-screen">
+  <header>
+    <div class="wrap">
+      <div class="brand"><span class="dot"></span>LOCALS GO · FOUNDER DASHBOARD</div>
+      <button id="logout">Sign Out</button>
+    </div>
+  </header>
+  <div class="wrap" style="padding-top:8px;">
+    <div class="stats-row" id="stats-row">
+      <div class="stat-box"><b id="stat-total">—</b><span>TOTAL SIGN-UPS</span></div>
+      <div class="stat-box"><b id="stat-waitlist">—</b><span>WAITLIST</span></div>
+      <div class="stat-box"><b id="stat-business">—</b><span>FOUNDING BUSINESS APPS</span></div>
+      <div class="stat-box"><b id="stat-today">—</b><span>LAST 7 DAYS</span></div>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <h2>Top Referral Sources</h2>
+        <button class="refresh" id="refresh-btn">Refresh</button>
+      </div>
+      <div id="source-table-wrap"><div class="loading">Loading…</div></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Recent Sign-ups</h2></div>
+      <div id="recent-table-wrap"><div class="loading">Loading…</div></div>
+    </section>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const loginScreen = document.getElementById('login-screen');
+  const dashScreen = document.getElementById('dash-screen');
+  const loginMsg = document.getElementById('login-msg');
+  let isSignupMode = false;
+
+  document.getElementById('toggle-mode').onclick = () => {
+    isSignupMode = !isSignupMode;
+    document.getElementById('login-btn').style.display = isSignupMode ? 'none' : 'block';
+    document.getElementById('signup-btn').style.display = isSignupMode ? 'block' : 'none';
+    document.getElementById('login-sub').textContent = isSignupMode
+      ? 'Create your founder account (one-time setup).'
+      : 'Sign in to view your Locals Go funnel.';
+    document.getElementById('toggle-mode').textContent = isSignupMode
+      ? 'Already have an account? Sign in'
+      : 'First time here? Create an account';
+  };
+
+  document.getElementById('login-btn').onclick = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) showMsg(error.message, 'err');
+    else checkSession();
+  };
+
+  document.getElementById('signup-btn').onclick = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (password.length < 8) { showMsg('Password must be at least 8 characters.', 'err'); return; }
+    const { error } = await sb.auth.signUp({ email, password });
+    if (error) showMsg(error.message, 'err');
+    else showMsg('Account created. Check your email to confirm, then sign in.', 'ok');
+  };
+
+  document.getElementById('logout').onclick = async () => {
+    await sb.auth.signOut();
+    dashScreen.style.display = 'none';
+    loginScreen.style.display = 'flex';
+  };
+
+  function showMsg(text, type) {
+    loginMsg.textContent = text;
+    loginMsg.className = `login-msg ${type}`;
+  }
+
+  async function checkSession() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      loginScreen.style.display = 'none';
+      dashScreen.style.display = 'block';
+      loadDashboard();
+    } else {
+      loginScreen.style.display = 'flex';
+      dashScreen.style.display = 'none';
+    }
+  }
+
+  document.getElementById('refresh-btn').onclick = loadDashboard;
+
+  async function loadDashboard() {
+    const { data, error } = await sb.from('lg_signups_unified').select('*').order('created_at', { ascending: false });
+
+    if (error) {
+      document.getElementById('source-table-wrap').innerHTML = `<div class="empty">Couldn't load data: ${error.message}</div>`;
+      document.getElementById('recent-table-wrap').innerHTML = '';
+      return;
+    }
+
+    const rows = data || [];
+    const total = rows.length;
+    const waitlist = rows.filter(r => r.source_channel === 'waitlist').length;
+    const business = rows.filter(r => r.source_channel === 'founding_business').length;
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const recent7 = rows.filter(r => new Date(r.created_at) > sevenDaysAgo).length;
+
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-waitlist').textContent = waitlist;
+    document.getElementById('stat-business').textContent = business;
+    document.getElementById('stat-today').textContent = recent7;
+
+    const sourceCounts = {};
+    rows.forEach(r => {
+      const key = r.referral_source || (r.source_channel === 'founding_business' ? 'founding_business_form' : 'direct');
+      sourceCounts[key] = (sourceCounts[key] || 0) + 1;
+    });
+    const sortedSources = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1]);
+
+    if (sortedSources.length === 0) {
+      document.getElementById('source-table-wrap').innerHTML = '<div class="empty">No sign-ups yet — once your referral links go out, this fills in automatically.</div>';
+    } else {
+      document.getElementById('source-table-wrap').innerHTML = `
+        <table><thead><tr><th>Source</th><th>Sign-ups</th></tr></thead><tbody>
+        ${sortedSources.map(([src, count]) => `<tr><td>${escapeHtml(src)}</td><td>${count}</td></tr>`).join('')}
+        </tbody></table>`;
+    }
+
+    if (rows.length === 0) {
+      document.getElementById('recent-table-wrap').innerHTML = '<div class="empty">Nothing here yet.</div>';
+    } else {
+      document.getElementById('recent-table-wrap').innerHTML = `
+        <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Channel</th><th>Date</th></tr></thead><tbody>
+        ${rows.slice(0, 25).map(r => `
+          <tr>
+            <td>${escapeHtml(r.name || '—')}</td>
+            <td>${escapeHtml(r.email || '—')}</td>
+            <td>${escapeHtml(r.role || '—')}</td>
+            <td><span class="badge ${r.source_channel}">${r.source_channel === 'waitlist' ? 'Waitlist' : 'Founding Biz'}</span></td>
+            <td>${new Date(r.created_at).toLocaleDateString()}</td>
+          </tr>`).join('')}
+        </tbody></table>`;
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  checkSession();
+</script>
+
+</body>
+</html>
