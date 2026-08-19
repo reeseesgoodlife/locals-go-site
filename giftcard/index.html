@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — $2,000 Gift Card Giveaway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     EDIT YOUR SPONSOR LIST HERE — confirmed real businesses
+     marked ✓. Replace the "ADD BUSINESS" placeholders or
+     remove unused slots.
+     ============================================ */
+</style>
+</head>
+<body>
+<script>
+  const SPONSORS = [
+    "Lady Luxury Lanes Car Club",
+    "DJ Lady Solo",
+    "Past Perfect Too",
+    "Cutties Barbershop",
+    "Champions United Financial",
+    "The Hive",
+    "Breezy's Freezys",
+    "Perfume Plaza",
+    "Meal Prep Chef",
+    "TKB The King's Baby",
+    "The Biz Diva",
+    "B.L.I.N.D. Rumors",
+    "Group 7",
+    "Family Promise",
+    "Books and Blocks"
+  ];
+  const GIFT_AMOUNT = "$2,000";
+  const TAGLINE = "A Gift That Gives Back!";
+</script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#08080a;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:40px 20px;
+    font-family:'Inter',sans-serif;
+  }
+  .card{
+    width:900px;max-width:100%;
+    background:linear-gradient(135deg, #F2C94C 0%, #F2A93C 40%, #D4881F 100%);
+    border-radius:28px;
+    padding:44px 48px;
+    position:relative;
+    box-shadow:0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4);
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.35), transparent 35%),
+      radial-gradient(circle at 85% 75%, rgba(255,255,255,0.2), transparent 40%);
+    pointer-events:none;
+  }
+  .top-row{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:2;}
+  .logo{
+    display:flex;align-items:center;gap:10px;
+    background:#08080a;padding:10px 18px 10px 12px;border-radius:100px;
+  }
+  .logo-mark{
+    width:26px;height:26px;border-radius:50% 50% 50% 0;
+    background:#B4FF39;transform:rotate(-45deg);
+  }
+  .logo-text b{
+    font-family:'Space Grotesk',sans-serif;color:#fff;font-size:1.1rem;display:block;transform:none;
+  }
+  .logo-text span{
+    font-family:'Inter',sans-serif;color:#B4FF39;font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  }
+  .tagline{
+    font-family:'Space Grotesk',sans-serif;font-weight:800;font-style:italic;
+    color:#08080a;font-size:1.15rem;text-align:right;max-width:220px;line-height:1.2;
+    text-shadow:0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  .amount-block{
+    position:relative;z-index:2;text-align:center;padding:38px 0 26px;
+  }
+  .amount-block .giving{
+    font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2.6rem;color:#08080a;
+    letter-spacing:-0.02em;line-height:1;
+  }
+  .amount-block .sub{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;color:#08080a;
+    letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;
+  }
+
+  .sponsor-panel{
+    position:relative;z-index:2;
+    background:rgba(255,255,255,0.55);
+    border:1px solid rgba(255,255,255,0.7);
+    border-radius:16px;padding:22px 26px;
+    backdrop-filter:blur(2px);
+  }
+  .sponsor-label{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:0.72rem;color:#5c4200;
+    text-transform:uppercase;letter-spacing:0.08em;margin-bottom:14px;text-align:center;
+  }
+  .sponsor-grid{
+    display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:12px 14px;
+  }
+  .sponsor-chip{
+    background:#fff;border-radius:10px;padding:10px 8px;text-align:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.72rem;color:#1a1a1a;
+    box-shadow:0 4px 10px rgba(0,0,0,0.12);
+    display:flex;align-items:center;justify-content:center;min-height:48px;line-height:1.15;
+  }
+  .sponsor-chip.placeholder{color:#b08a3a;border:1.5px dashed #b08a3a;background:rgba(255,255,255,0.6);}
+
+  .bottom-row{
+    position:relative;z-index:2;margin-top:24px;text-align:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;color:#08080a;
+    letter-spacing:0.02em;
+  }
+  .bottom-row span{margin:0 10px;}
+
+  @media (max-width:640px){
+    .card{padding:30px 24px;}
+    .sponsor-grid{grid-template-columns:repeat(2,1fr);}
+    .amount-block .giving{font-size:1.9rem;}
+    .top-row{flex-direction:column;gap:16px;}
+    .tagline{text-align:left;max-width:100%;}
+  }
+</style>
+
+<div class="card">
+  <div class="top-row">
+    <div class="logo">
+      <div class="logo-mark"></div>
+      <div class="logo-text"><b>Locals Go</b><span>Shop · Earn · Explore</span></div>
+    </div>
+    <div class="tagline" id="tagline"></div>
+  </div>
+
+  <div class="amount-block">
+    <div class="giving" id="amount-display"></div>
+    <div class="sub">Gift Card Giveaway</div>
+  </div>
+
+  <div class="sponsor-panel">
+    <div class="sponsor-label">Sponsored by our founding &amp; local businesses</div>
+    <div class="sponsor-grid" id="sponsor-grid"></div>
+  </div>
+
+  <div class="bottom-row">
+    Support Locals <span>·</span> Build Community <span>·</span> Make Lawton Stronger
+  </div>
+</div>
+
+<script>
+  document.getElementById('tagline').textContent = TAGLINE;
+  document.getElementById('amount-display').textContent = GIFT_AMOUNT + ' Gift Card!';
+  const grid = document.getElementById('sponsor-grid');
+  SPONSORS.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'sponsor-chip' + (name === 'ADD BUSINESS' ? ' placeholder' : '');
+    div.textContent = name;
+    grid.appendChild(div);
+  });
+</script>
+</body>
+</html>
