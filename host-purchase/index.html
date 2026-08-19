@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locals Go — Become an Event Host</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#08080a;--card:#101113;--lime:#B4FF39;--purple:#8B2FE0;--ink:#F2F2ED;--muted:#8A8A93;--line:rgba(242,242,237,0.09);}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:640px;margin:0 auto;padding:48px 24px 80px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--lime);letter-spacing:0.06em;margin-bottom:14px;}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(1.7rem,5vw,2.3rem);letter-spacing:-0.02em;margin-bottom:14px;}
+  .sub{color:var(--muted);line-height:1.6;margin-bottom:36px;font-size:0.95rem;}
+
+  .packet-card{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;margin-bottom:14px;
+    cursor:pointer;transition:border-color 0.15s ease;position:relative;
+  }
+  .packet-card.selected{border-color:var(--lime);}
+  .packet-card .tier{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem;}
+  .packet-card .price{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem;color:var(--lime);margin-top:4px;}
+  .packet-card .details{color:var(--muted);font-size:0.85rem;margin-top:8px;line-height:1.5;}
+  .radio-dot{
+    position:absolute;top:26px;right:26px;width:20px;height:20px;border-radius:50%;
+    border:2px solid var(--line);
+  }
+  .packet-card.selected .radio-dot{border-color:var(--lime);background:radial-gradient(circle, var(--lime) 40%, transparent 42%);}
+
+  .form-section{margin-top:36px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:7px;}
+  .field input{width:100%;background:#08080a;border:1px solid var(--line);border-radius:8px;padding:12px 14px;color:var(--ink);font-size:0.95rem;outline:none;}
+  .field input:focus{border-color:var(--lime);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:480px){.field-row{grid-template-columns:1fr;}}
+
+  .submit-btn{width:100%;font-family:'Space Grotesk',sans-serif;font-weight:600;background:var(--lime);color:#08080a;border:none;padding:16px;border-radius:8px;font-size:0.95rem;cursor:pointer;margin-top:8px;}
+  .submit-btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+  .success-card{background:var(--card);border:1px solid rgba(180,255,57,0.3);border-radius:16px;padding:32px;text-align:center;}
+  .success-card h2{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;margin-bottom:10px;}
+  .success-card p{color:var(--muted);font-size:0.9rem;line-height:1.5;margin-bottom:20px;}
+  .link-box{background:#08080a;border:1px solid var(--line);border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--lime);word-break:break-all;margin-bottom:14px;}
+  .copy-btn{font-family:'Space Grotesk',sans-serif;font-weight:600;background:var(--lime);color:#08080a;border:none;padding:11px 20px;border-radius:100px;font-size:0.85rem;cursor:pointer;}
+
+  .status-msg{margin-top:16px;padding:12px 14px;border-radius:8px;font-size:0.88rem;display:none;}
+  .status-msg.err{display:block;background:rgba(224,47,47,0.08);border:1px solid rgba(224,47,47,0.3);color:#ff6b6b;}
+  #form-view, #success-view{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">// EVENT HOST</div>
+  <h1>Bring your vendors into the game.</h1>
+  <p class="sub">Running an event with multiple vendors under one roof? Buy a packet, get your referral link, and every vendor who joins through you earns you commission.</p>
+
+  <div id="packet-list"><div style="color:var(--muted);font-size:0.9rem;">Loading packets…</div></div>
+
+  <div class="form-section" id="form-view">
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="host-name" required>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="host-email" required>
+      </div>
+      <div class="field">
+        <label>Phone (optional)</label>
+        <input type="tel" id="host-phone">
+      </div>
+    </div>
+    <div class="field">
+      <label>Your Business / Event Name</label>
+      <input type="text" id="host-business" placeholder="e.g. Downtown Vendor Mixer">
+    </div>
+    <button class="submit-btn" id="purchase-btn">Purchase Packet & Get My Link</button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+
+  <div id="success-view" class="success-card">
+    <h2>You're set up!</h2>
+    <p>Share this link with your vendors. Every sign-up through it is tracked back to you and your packet.</p>
+    <div class="link-box" id="referral-link-display"></div>
+    <button class="copy-btn" id="copy-link-btn">Copy Link</button>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let selectedPacket = null;
+
+  async function loadPackets() {
+    const { data, error } = await sb.from('lg_vendor_packets').select('*').order('price', { ascending: true });
+    const listEl = document.getElementById('packet-list');
+    if (error || !data || data.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--muted);">No packets available right now.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    data.forEach(packet => {
+      const card = document.createElement('div');
+      card.className = 'packet-card';
+      card.dataset.id = packet.id;
+      card.innerHTML = `
+        <div class="radio-dot"></div>
+        <div class="tier">${escapeHtml(packet.tier_name)}</div>
+        <div class="price">$${Number(packet.price).toLocaleString()}</div>
+        <div class="details">${packet.vendor_slots} vendor slots · ${packet.commission_percent}% commission split across vendors you bring in</div>
+      `;
+      card.onclick = () => selectPacket(packet, card);
+      listEl.appendChild(card);
+    });
+    document.getElementById('form-view').style.display = 'block';
+    selectPacket(data[0], listEl.children[0]);
+  }
+
+  function selectPacket(packet, cardEl) {
+    document.querySelectorAll('.packet-card').forEach(c => c.classList.remove('selected'));
+    cardEl.classList.add('selected');
+    selectedPacket = packet;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function generateReferralCode(name) {
+    const base = (name || 'host').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const suffix = Math.random().toString(36).slice(2, 6);
+    return `${base}-${suffix}`;
+  }
+
+  document.getElementById('purchase-btn').onclick = async () => {
+    const name = document.getElementById('host-name').value.trim();
+    const email = document.getElementById('host-email').value.trim();
+    const phone = document.getElementById('host-phone').value.trim();
+    const business = document.getElementById('host-business').value.trim();
+    const statusMsg = document.getElementById('status-msg');
+    statusMsg.style.display = 'none';
+
+    if (!name || !email || !selectedPacket) {
+      statusMsg.textContent = 'Please fill in your name and email, and select a packet.';
+      statusMsg.className = 'status-msg err';
+      return;
+    }
+
+    const btn = document.getElementById('purchase-btn');
+    btn.disabled = true;
+    btn.textContent = 'Setting up…';
+
+    try {
+      const referralCode = generateReferralCode(name);
+
+      const { data: hostData, error: hostErr } = await sb.from('lg_event_hosts')
+        .insert({ name, email, phone: phone || null, business_name: business || null, referral_code: referralCode })
+        .select().single();
+      if (hostErr) throw hostErr;
+
+      const { data: purchaseData, error: purchaseErr } = await sb.from('lg_host_packet_purchases')
+        .insert({ host_id: hostData.id, packet_id: selectedPacket.id, status: 'pending' })
+        .select().single();
+      if (purchaseErr) throw purchaseErr;
+
+      const link = `${window.location.origin}/vendor-signup/?ref=${referralCode}`;
+      document.getElementById('referral-link-display').textContent = link;
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+
+      document.getElementById('copy-link-btn').onclick = () => {
+        navigator.clipboard.writeText(link);
+        document.getElementById('copy-link-btn').textContent = 'Copied!';
+        setTimeout(() => document.getElementById('copy-link-btn').textContent = 'Copy Link', 1500);
+      };
+    } catch (err) {
+      statusMsg.textContent = "Something went wrong — please try again.";
+      statusMsg.className = 'status-msg err';
+      btn.disabled = false;
+      btn.textContent = 'Purchase Packet & Get My Link';
+    }
+  };
+
+  loadPackets();
+</script>
+</body>
+</html>
