@@ -1,0 +1,1720 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>Locals Go — Gold Card AR Treasure Hunt</title>
+
+  <!-- THREE.JS -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.144.0/build/three.min.js"></script>
+
+  <!-- GLTF LOADER -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.144.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <!-- MINDAR -->
+  <script src="https://unpkg.com/mind-ar/dist/mindar-image-three.prod.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #ar-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* -------------------------------
+       START SCREEN
+    -------------------------------- */
+
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
+
+      background:
+        radial-gradient(
+          circle at center,
+          rgba(110,255,0,.16),
+          rgba(0,0,0,.96) 65%
+        );
+
+      color: white;
+      text-align: center;
+    }
+
+    .start-card {
+      width: min(420px, 94vw);
+      padding: 30px 22px;
+
+      border: 1px solid rgba(183,255,0,.6);
+      border-radius: 28px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(25,25,25,.96),
+          rgba(5,5,5,.98)
+        );
+
+      box-shadow:
+        0 0 40px rgba(145,255,0,.22),
+        inset 0 0 30px rgba(255,215,0,.06);
+    }
+
+    .logo {
+      font-size: 34px;
+      font-weight: 900;
+      color: #c9ff00;
+
+      text-shadow:
+        0 0 10px rgba(190,255,0,.8),
+        0 0 25px rgba(190,255,0,.5);
+    }
+
+    .gold-title {
+      margin-top: 8px;
+
+      color: #ffd84d;
+      font-size: 25px;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      margin: 12px 0 25px;
+
+      color: #ddd;
+      line-height: 1.5;
+    }
+
+    #start-button {
+      width: 100%;
+      padding: 17px;
+
+      border: 0;
+      border-radius: 999px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #fff09a,
+          #ffc400,
+          #ff9f00
+        );
+
+      color: #111;
+
+      font-size: 18px;
+      font-weight: 900;
+
+      box-shadow:
+        0 0 25px rgba(255,196,0,.45);
+
+      cursor: pointer;
+    }
+
+    /* -------------------------------
+       TOP HUD
+    -------------------------------- */
+
+    #hud {
+      position: fixed;
+      z-index: 100;
+
+      top: 16px;
+      left: 16px;
+      right: 16px;
+
+      display: none;
+
+      justify-content: space-between;
+      align-items: center;
+
+      pointer-events: none;
+    }
+
+    .hud-logo {
+      padding: 9px 14px;
+
+      border-radius: 999px;
+
+      background: rgba(0,0,0,.72);
+
+      border: 1px solid rgba(194,255,0,.7);
+
+      color: #c9ff00;
+
+      font-size: 16px;
+      font-weight: 900;
+
+      box-shadow:
+        0 0 15px rgba(194,255,0,.2);
+    }
+
+    .points {
+      padding: 9px 14px;
+
+      border-radius: 999px;
+
+      background: rgba(0,0,0,.78);
+
+      border: 1px solid rgba(255,215,0,.75);
+
+      color: #ffd84d;
+
+      font-weight: 900;
+    }
+
+    /* -------------------------------
+       SCAN MESSAGE
+    -------------------------------- */
+
+    #scan-message {
+      position: fixed;
+
+      left: 50%;
+      bottom: 35px;
+
+      transform: translateX(-50%);
+
+      z-index: 100;
+
+      width: min(390px, 90vw);
+
+      padding: 14px 18px;
+
+      border-radius: 18px;
+
+      background: rgba(0,0,0,.78);
+
+      border: 1px solid rgba(194,255,0,.5);
+
+      color: white;
+
+      text-align: center;
+
+      font-size: 14px;
+
+      display: none;
+    }
+
+    /* -------------------------------
+       TREASURE PORTAL UI
+    -------------------------------- */
+
+    #portal-ui {
+      position: fixed;
+      z-index: 150;
+
+      left: 50%;
+      bottom: 22px;
+
+      transform: translateX(-50%);
+
+      width: min(420px, 92vw);
+
+      display: none;
+
+      text-align: center;
+    }
+
+    .portal-panel {
+
+      padding: 18px;
+
+      border-radius: 25px;
+
+      background:
+        linear-gradient(
+          145deg,
+          rgba(5,10,5,.92),
+          rgba(0,0,0,.96)
+        );
+
+      border:
+
+        1px solid rgba(194,255,0,.65);
+
+      box-shadow:
+        0 0 30px rgba(150,255,0,.22),
+        inset 0 0 25px rgba(255,215,0,.05);
+    }
+
+    .reesee-name {
+
+      color: #c9ff00;
+
+      font-size: 21px;
+
+      font-weight: 900;
+
+      margin-bottom: 4px;
+    }
+
+    .portal-title {
+
+      color: #ffd84d;
+
+      font-size: 24px;
+
+      font-weight: 900;
+    }
+
+    .portal-text {
+
+      color: #ddd;
+
+      margin: 8px 0 15px;
+
+      line-height: 1.4;
+    }
+
+    #play-button {
+
+      width: 100%;
+
+      padding: 15px;
+
+      border: 0;
+
+      border-radius: 999px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #dfff5c,
+          #9cff00
+        );
+
+      color: #111;
+
+      font-size: 17px;
+
+      font-weight: 900;
+
+      cursor: pointer;
+
+      box-shadow:
+        0 0 20px rgba(154,255,0,.4);
+    }
+
+    /* -------------------------------
+       REWARD
+    -------------------------------- */
+
+    #reward {
+
+      position: fixed;
+
+      z-index: 300;
+
+      inset: 0;
+
+      display: none;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 20px;
+
+      background:
+        rgba(0,0,0,.82);
+    }
+
+    .reward-card {
+
+      width: min(390px, 92vw);
+
+      padding: 30px 22px;
+
+      text-align: center;
+
+      border-radius: 30px;
+
+      background:
+        linear-gradient(
+          145deg,
+          #151515,
+          #050505
+        );
+
+      border: 2px solid #ffd84d;
+
+      box-shadow:
+        0 0 70px rgba(255,200,0,.35);
+    }
+
+    .reward-icon {
+
+      font-size: 65px;
+
+      animation:
+        treasureFloat 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes treasureFloat {
+
+      from {
+        transform: translateY(0) rotate(-3deg);
+      }
+
+      to {
+        transform: translateY(-10px) rotate(3deg);
+      }
+
+    }
+
+    .reward-title {
+
+      color: #ffd84d;
+
+      font-size: 30px;
+
+      font-weight: 900;
+
+      margin-top: 10px;
+    }
+
+    .reward-points {
+
+      color: #c9ff00;
+
+      font-size: 23px;
+
+      font-weight: 900;
+
+      margin: 10px 0;
+    }
+
+    #continue-button {
+
+      margin-top: 15px;
+
+      width: 100%;
+
+      padding: 14px;
+
+      border: 0;
+
+      border-radius: 999px;
+
+      background: #c9ff00;
+
+      color: #111;
+
+      font-weight: 900;
+
+      font-size: 16px;
+    }
+
+    /* -------------------------------
+       ERROR
+    -------------------------------- */
+
+    #error-message {
+
+      position: fixed;
+
+      z-index: 999;
+
+      inset: 0;
+
+      display: none;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 25px;
+
+      background: #050505;
+
+      color: white;
+
+      text-align: center;
+    }
+
+    .error-box {
+
+      max-width: 400px;
+
+      padding: 25px;
+
+      border-radius: 20px;
+
+      border: 1px solid #ff5555;
+
+      background: #111;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- AR CAMERA -->
+  <div id="ar-container"></div>
+
+
+  <!-- START -->
+  <div id="start-screen">
+
+    <div class="start-card">
+
+      <div class="logo">
+        📍 Locals Go
+      </div>
+
+      <div class="gold-title">
+        GOLD CARD EXPERIENCE
+      </div>
+
+      <p class="subtitle">
+        Your Gold Locals Go Card has a secret.
+        Scan it and discover what happens when
+        your card comes alive.
+      </p>
+
+      <button id="start-button">
+        ✨ START AR EXPERIENCE
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- HUD -->
+  <div id="hud">
+
+    <div class="hud-logo">
+      📍 LOCALS GO
+    </div>
+
+    <div class="points">
+      ⭐ <span id="points-value">0</span>
+    </div>
+
+  </div>
+
+
+  <!-- SCAN MESSAGE -->
+  <div id="scan-message">
+    📷 Point your camera at your Gold Locals Go Card
+  </div>
+
+
+  <!-- PORTAL -->
+  <div id="portal-ui">
+
+    <div class="portal-panel">
+
+      <div class="reesee-name">
+        👋 Hey! I'm Reesee.
+      </div>
+
+      <div class="portal-title">
+        🌀 TREASURE PORTAL FOUND
+      </div>
+
+      <div class="portal-text">
+
+        You've discovered a hidden Locals Go
+        treasure portal.
+
+        <br><br>
+
+        Enter the portal, complete your first
+        mission and earn points.
+
+      </div>
+
+      <button id="play-button">
+        🎮 ENTER THE TREASURE HUNT
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- REWARD -->
+  <div id="reward">
+
+    <div class="reward-card">
+
+      <div class="reward-icon">
+        💰
+      </div>
+
+      <div class="reward-title">
+        TREASURE FOUND!
+      </div>
+
+      <div class="reward-points">
+        +500 POINTS
+      </div>
+
+      <p>
+        You discovered your first
+        Locals Go treasure.
+      </p>
+
+      <p>
+        Keep exploring local businesses
+        to unlock more rewards.
+      </p>
+
+      <button id="continue-button">
+        🗺️ FIND THE NEXT TREASURE
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ERROR -->
+  <div id="error-message">
+
+    <div class="error-box">
+
+      <h2>AR Couldn't Start</h2>
+
+      <p id="error-text">
+        Please make sure you are using HTTPS
+        and allow camera access.
+      </p>
+
+    </div>
+
+  </div>
+
+
+<script>
+
+(async () => {
+
+  /*
+  ============================================================
+  LOCALS GO GOLD CARD AR EXPERIENCE
+  ============================================================
+
+  EXPERIENCE FLOW:
+
+  GOLD CARD
+      ↓
+  IMAGE TARGET DETECTED
+      ↓
+  REESEE HOLOGRAM
+      ↓
+  TREASURE PORTAL
+      ↓
+  ENTER MISSION
+      ↓
+  +500 POINTS
+      ↓
+  REWARD
+      ↓
+  NEXT TREASURE
+
+  ============================================================
+  */
+
+
+  const startScreen =
+    document.getElementById("start-screen");
+
+  const startButton =
+    document.getElementById("start-button");
+
+  const hud =
+    document.getElementById("hud");
+
+  const scanMessage =
+    document.getElementById("scan-message");
+
+  const portalUI =
+    document.getElementById("portal-ui");
+
+  const playButton =
+    document.getElementById("play-button");
+
+  const reward =
+    document.getElementById("reward");
+
+  const continueButton =
+    document.getElementById("continue-button");
+
+  const pointsValue =
+    document.getElementById("points-value");
+
+  const errorMessage =
+    document.getElementById("error-message");
+
+  const errorText =
+    document.getElementById("error-text");
+
+
+  /*
+  ============================================================
+  SUPABASE CONFIG
+  ============================================================
+  */
+
+  const SUPABASE_URL = "https://yudsmzobtfdqmdiohkun.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_1uIYdtZUHOJxMnYSsOlgzg_dLngZ2rR";
+
+  const LOCALS_GO_PLATFORM_BUSINESS_ID = "eab3d66f-e34e-4bf1-892a-23b890bed387";
+  const GOLD_CARD_MISSION_ID = "fc6ced84-2fe6-4c5d-9c61-26207cd8e79b";
+
+  function sbHeaders(extra = {}) {
+    return {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      ...extra
+    };
+  }
+
+  /*
+  Simple device fingerprint — persisted locally as the player's
+  identity key (not as their score). Matches the pattern used by
+  supabase-checkin.js across the other AR checkpoints.
+  */
+  function getDeviceFingerprint() {
+    let fp = localStorage.getItem("lgDeviceFingerprint");
+    if (!fp) {
+      fp = "dev_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem("lgDeviceFingerprint", fp);
+    }
+    return fp;
+  }
+
+  const deviceFingerprint = getDeviceFingerprint();
+  const playerKey = deviceFingerprint;
+
+  let playerRecord = null; // { id, xp, level, coins }
+
+  /*
+  ============================================================
+  PLAYER: LOAD OR CREATE IN SUPABASE
+  ============================================================
+  */
+
+  async function loadOrCreatePlayer() {
+    // try to find existing player by player_key
+    const findRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/lg_players?player_key=eq.${encodeURIComponent(playerKey)}&select=id,player_key,xp,level,coins`,
+      { headers: sbHeaders() }
+    );
+    const found = await findRes.json();
+
+    if (found && found.length) {
+      playerRecord = found[0];
+      return playerRecord;
+    }
+
+    // create new player
+    const createRes = await fetch(`${SUPABASE_URL}/rest/v1/lg_players`, {
+      method: "POST",
+      headers: sbHeaders({ "Prefer": "return=representation" }),
+      body: JSON.stringify({
+        player_key: playerKey,
+        device_fingerprint: deviceFingerprint,
+        xp: 0,
+        level: 1,
+        coins: 0
+      })
+    });
+    const created = await createRes.json();
+    playerRecord = created[0];
+    return playerRecord;
+  }
+
+  async function addPoints(amount) {
+    if (!playerRecord) await loadOrCreatePlayer();
+
+    const newXp = (playerRecord.xp || 0) + amount;
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/lg_players?id=eq.${playerRecord.id}`,
+      {
+        method: "PATCH",
+        headers: sbHeaders({ "Prefer": "return=representation" }),
+        body: JSON.stringify({ xp: newXp })
+      }
+    );
+    const updated = await res.json();
+    playerRecord = updated[0];
+
+    pointsValue.textContent = playerRecord.xp;
+  }
+
+  async function logCheckin() {
+    await fetch(`${SUPABASE_URL}/rest/v1/lg_checkin_events`, {
+      method: "POST",
+      headers: sbHeaders(),
+      body: JSON.stringify({
+        business_id: LOCALS_GO_PLATFORM_BUSINESS_ID,
+        player_id: playerRecord.id,
+        player_key: playerKey,
+        device_fingerprint: deviceFingerprint,
+        status: "verified",
+        geo_status: "unverified"
+      })
+    });
+  }
+
+  async function logMissionCompletion() {
+    await fetch(`${SUPABASE_URL}/rest/v1/lg_mission_completions`, {
+      method: "POST",
+      headers: sbHeaders(),
+      body: JSON.stringify({
+        mission_id: GOLD_CARD_MISSION_ID,
+        player_id: playerRecord.id
+      })
+    });
+  }
+
+  let targetFound =
+    false;
+
+  let portalUnlocked =
+    false;
+
+
+  // load player + show current points before the camera even starts
+  await loadOrCreatePlayer();
+  pointsValue.textContent = playerRecord.xp;
+
+
+  /*
+  ============================================================
+  THREE.JS / MINDAR
+  ============================================================
+  */
+
+  let mindarThree;
+
+  try {
+
+    mindarThree =
+      new window.MINDAR.IMAGE.MindARThree({
+
+        container:
+          document.getElementById("ar-container"),
+
+        imageTargetSrc:
+          "./targets.mind",
+
+        maxTrack:
+          1,
+
+        uiScanning:
+          "no",
+
+        uiLoading:
+          "no"
+
+      });
+
+  } catch (error) {
+
+    console.error(error);
+
+    errorMessage.style.display =
+      "flex";
+
+    errorText.textContent =
+      "MindAR could not initialize.";
+
+    return;
+
+  }
+
+
+  const {
+    renderer,
+    scene,
+    camera
+  } = mindarThree;
+
+
+  /*
+  ============================================================
+  CAMERA / RENDERER
+  ============================================================
+  */
+
+  renderer.setPixelRatio(
+    Math.min(window.devicePixelRatio, 2)
+  );
+
+
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+  );
+
+
+  renderer.outputEncoding =
+    THREE.sRGBEncoding;
+
+
+  /*
+  ============================================================
+  LIGHTING
+  ============================================================
+  */
+
+  const hemisphereLight =
+    new THREE.HemisphereLight(
+      0xffffff,
+      0x223300,
+      1.4
+    );
+
+  scene.add(
+    hemisphereLight
+  );
+
+
+  const pointLight =
+    new THREE.PointLight(
+      0xd8ff00,
+      2,
+      5
+    );
+
+  pointLight.position.set(
+    0,
+    1,
+    1
+  );
+
+  scene.add(
+    pointLight
+  );
+
+
+  /*
+  ============================================================
+  CARD ANCHOR
+  ============================================================
+  */
+
+  const anchor =
+    mindarThree.addAnchor(0);
+
+
+  /*
+  ============================================================
+  TREASURE PORTAL
+  ============================================================
+  */
+
+  const portalGroup =
+    new THREE.Group();
+
+  portalGroup.position.set(
+    0,
+    0,
+    0.05
+  );
+
+  anchor.group.add(
+    portalGroup
+  );
+
+
+  /*
+  PORTAL RINGS
+  */
+
+  const ringMaterial =
+    new THREE.MeshBasicMaterial({
+
+      color:
+        0xc9ff00,
+
+      transparent:
+        true,
+
+      opacity:
+        0.8
+
+    });
+
+
+  for (
+    let i = 0;
+    i < 4;
+    i++
+  ) {
+
+    const geometry =
+      new THREE.TorusGeometry(
+        0.35 + i * 0.09,
+        0.012,
+        16,
+        64
+      );
+
+    const ring =
+      new THREE.Mesh(
+        geometry,
+        ringMaterial.clone()
+      );
+
+    ring.rotation.x =
+      Math.PI / 2;
+
+    ring.userData.speed =
+      0.5 + i * 0.25;
+
+    portalGroup.add(
+      ring
+    );
+
+  }
+
+
+  /*
+  ============================================================
+  PORTAL ENERGY CORE
+  ============================================================
+  */
+
+  const coreGeometry =
+    new THREE.CircleGeometry(
+      0.35,
+      64
+    );
+
+
+  const coreMaterial =
+    new THREE.MeshBasicMaterial({
+
+      color:
+        0x9cff00,
+
+      transparent:
+        true,
+
+      opacity:
+        0.18,
+
+      side:
+        THREE.DoubleSide
+
+    });
+
+
+  const core =
+    new THREE.Mesh(
+      coreGeometry,
+      coreMaterial
+    );
+
+
+  core.rotation.x =
+    -Math.PI / 2;
+
+  portalGroup.add(
+    core
+  );
+
+
+  /*
+  ============================================================
+  FLOATING TREASURE
+  ============================================================
+  */
+
+  const treasureGeometry =
+    new THREE.OctahedronGeometry(
+      0.13,
+      0
+    );
+
+
+  const treasureMaterial =
+    new THREE.MeshStandardMaterial({
+
+      color:
+        0xffd23f,
+
+      emissive:
+        0xffa500,
+
+      emissiveIntensity:
+        1.5,
+
+      metalness:
+        0.9,
+
+      roughness:
+        0.18
+
+    });
+
+
+  const treasure =
+    new THREE.Mesh(
+      treasureGeometry,
+      treasureMaterial
+    );
+
+
+  treasure.position.set(
+    0,
+    0.55,
+    0
+  );
+
+
+  portalGroup.add(
+    treasure
+  );
+
+
+  /*
+  ============================================================
+  REESEE HOLOGRAM
+  ============================================================
+
+  If avatar.glb exists, it will be loaded.
+
+  If it doesn't exist, the experience creates
+  a holographic placeholder so the AR demo
+  still works.
+  ============================================================
+  */
+
+  let avatar = null;
+
+  let mixer = null;
+
+
+  const gltfLoader =
+    new THREE.GLTFLoader();
+
+
+  function createFallbackReesee() {
+
+    const group =
+      new THREE.Group();
+
+
+    /*
+    BODY
+    */
+
+    const body =
+      new THREE.Mesh(
+
+        new THREE.CapsuleGeometry(
+          0.16,
+          0.45,
+          8,
+          16
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+          color:
+            0x111111,
+
+          emissive:
+            0x9cff00,
+
+          emissiveIntensity:
+            0.22,
+
+          transparent:
+            true,
+
+          opacity:
+            0.92
+
+        })
+
+      );
+
+
+    body.position.y =
+      0.38;
+
+    group.add(body);
+
+
+    /*
+    HEAD
+    */
+
+    const head =
+      new THREE.Mesh(
+
+        new THREE.SphereGeometry(
+          0.16,
+          24,
+          24
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+          color:
+            0x8a5a3b,
+
+          emissive:
+            0x321500,
+
+          transparent:
+            true,
+
+          opacity:
+            0.96
+
+        })
+
+      );
+
+
+    head.position.y =
+      0.78;
+
+    group.add(head);
+
+
+    /*
+    HOLOGRAM LOCALS GO RING
+    */
+
+    const ring =
+      new THREE.Mesh(
+
+        new THREE.TorusGeometry(
+          0.25,
+          0.015,
+          12,
+          48
+        ),
+
+        new THREE.MeshBasicMaterial({
+
+          color:
+            0xc9ff00,
+
+          transparent:
+            true,
+
+          opacity:
+            0.9
+
+        })
+
+      );
+
+
+    ring.rotation.x =
+      Math.PI / 2;
+
+    ring.position.y =
+      0.05;
+
+    group.add(ring);
+
+
+    /*
+    HOLOGRAM PARTICLES
+    */
+
+    const particleGeometry =
+      new THREE.BufferGeometry();
+
+    const particleCount =
+      80;
+
+    const positions =
+      new Float32Array(
+        particleCount * 3
+      );
+
+
+    for (
+      let i = 0;
+      i < particleCount;
+      i++
+    ) {
+
+      positions[i * 3] =
+        (Math.random() - .5) * .5;
+
+      positions[i * 3 + 1] =
+        Math.random() * 1.1;
+
+      positions[i * 3 + 2] =
+        (Math.random() - .5) * .5;
+
+    }
+
+
+    particleGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        positions,
+        3
+      )
+    );
+
+
+    const particles =
+      new THREE.Points(
+
+        particleGeometry,
+
+        new THREE.PointsMaterial({
+
+          color:
+            0xc9ff00,
+
+          size:
+            0.018,
+
+          transparent:
+            true,
+
+          opacity:
+            0.8
+
+        })
+
+      );
+
+
+    group.add(
+      particles
+    );
+
+
+    group.scale.set(
+      .8,
+      .8,
+      .8
+    );
+
+
+    return group;
+
+  }
+
+
+  /*
+  ============================================================
+  LOAD REAL REESEE GLB
+  ============================================================
+  */
+
+  gltfLoader.load(
+
+    "./avatar.glb",
+
+    (gltf) => {
+
+      avatar =
+        gltf.scene;
+
+      avatar.scale.set(
+        0.45,
+        0.45,
+        0.45
+      );
+
+      avatar.position.set(
+        0,
+        0,
+        0
+      );
+
+
+      anchor.group.add(
+        avatar
+      );
+
+
+      if (
+        gltf.animations &&
+        gltf.animations.length
+      ) {
+
+        mixer =
+          new THREE.AnimationMixer(
+            avatar
+          );
+
+
+        const action =
+          mixer.clipAction(
+            gltf.animations[0]
+          );
+
+
+        action.play();
+
+      }
+
+    },
+
+    undefined,
+
+    () => {
+
+      /*
+      GLB isn't present.
+
+      Use the built-in hologram.
+      */
+
+      avatar =
+        createFallbackReesee();
+
+      avatar.position.set(
+        0,
+        0,
+        0
+      );
+
+      anchor.group.add(
+        avatar
+      );
+
+    }
+  );
+
+
+  /*
+  ============================================================
+  TARGET FOUND
+  ============================================================
+  */
+
+  anchor.onTargetFound = async () => {
+
+    console.log(
+      "Gold Locals Go Card detected!"
+    );
+
+
+    targetFound =
+      true;
+
+
+    scanMessage.style.display =
+      "none";
+
+
+    portalUI.style.display =
+      "block";
+
+
+    portalUnlocked =
+      true;
+
+
+    /*
+    LOG THE SCAN — always logs a checkin event.
+    FIRST SCAN BONUS — only awarded once per device.
+    */
+
+    await logCheckin();
+
+    if (
+      !localStorage.getItem(
+        "localsGoGoldCardScanned"
+      )
+    ) {
+
+      await addPoints(100);
+
+      localStorage.setItem(
+        "localsGoGoldCardScanned",
+        "true"
+      );
+
+    }
+
+  };
+
+
+  /*
+  ============================================================
+  TARGET LOST
+  ============================================================
+  */
+
+  anchor.onTargetLost = () => {
+
+    targetFound =
+      false;
+
+    portalUI.style.display =
+      "none";
+
+  };
+
+
+  /*
+  ============================================================
+  START AR
+  ============================================================
+  */
+
+  startButton.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        startScreen.style.display =
+          "none";
+
+        hud.style.display =
+          "flex";
+
+        scanMessage.style.display =
+          "block";
+
+
+        await mindarThree.start();
+
+
+        /*
+        CAMERA IS NOW LIVE
+        */
+
+        const clock =
+          new THREE.Clock();
+
+
+        renderer.setAnimationLoop(
+          () => {
+
+            const delta =
+              clock.getDelta();
+
+
+            if (mixer) {
+
+              mixer.update(
+                delta
+              );
+
+            }
+
+
+            /*
+            Animate portal
+            */
+
+            portalGroup.children.forEach(
+              (child) => {
+
+                if (
+                  child.geometry &&
+                  child.geometry.type ===
+                  "TorusGeometry"
+                ) {
+
+                  child.rotation.z +=
+                    0.01;
+
+                }
+
+              }
+            );
+
+
+            /*
+            Float treasure
+            */
+
+            treasure.rotation.x +=
+              0.02;
+
+            treasure.rotation.y +=
+              0.025;
+
+
+            treasure.position.y =
+              0.55 +
+              Math.sin(
+                performance.now() * 0.003
+              ) * 0.06;
+
+
+            /*
+            Pulse portal
+            */
+
+            const pulse =
+              1 +
+              Math.sin(
+                performance.now() * 0.004
+              ) * 0.08;
+
+
+            portalGroup.scale.set(
+              pulse,
+              pulse,
+              pulse
+            );
+
+
+            renderer.render(
+              scene,
+              camera
+            );
+
+          }
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        errorMessage.style.display =
+          "flex";
+
+        errorText.textContent =
+          "Camera access was denied or AR could not start. Please allow camera access and use HTTPS.";
+
+      }
+
+    }
+  );
+
+
+  /*
+  ============================================================
+  ENTER TREASURE HUNT
+  ============================================================
+  */
+
+  playButton.addEventListener(
+    "click",
+    async () => {
+
+      playButton.disabled = true;
+      playButton.textContent = "🎮 Claiming…";
+
+      try {
+
+        /*
+        Reward mission completion — writes to
+        lg_mission_completions and adds XP to
+        lg_players in Supabase.
+        */
+
+        await logMissionCompletion();
+        await addPoints(500);
+
+        portalUI.style.display =
+          "none";
+
+        reward.style.display =
+          "flex";
+
+      } catch (err) {
+
+        console.error(err);
+        playButton.textContent = "⚠️ Try again";
+
+      } finally {
+
+        playButton.disabled = false;
+        setTimeout(() => {
+          playButton.textContent = "🎮 ENTER THE TREASURE HUNT";
+        }, 1500);
+
+      }
+
+    }
+  );
+
+
+  /*
+  ============================================================
+  CONTINUE
+  ============================================================
+  */
+
+  continueButton.addEventListener(
+    "click",
+    () => {
+
+      reward.style.display =
+        "none";
+
+
+      alert(
+        "🗺️ Next Mission Unlocked!\n\nFind a participating Locals Go business and scan the next treasure checkpoint."
+      );
+
+    }
+  );
+
+
+  /*
+  ============================================================
+  RESIZE
+  ============================================================
+  */
+
+  window.addEventListener(
+    "resize",
+    () => {
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+    }
+  );
+
+
+})();
+
+</script>
+
+</body>
+</html>
