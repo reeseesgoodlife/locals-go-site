@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locals Go — Treasure Hunt AR Portal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="ar-container">
+        <!-- AR Scene Canvas -->
+        <canvas id="arCanvas"></canvas>
+
+        <!-- Fallback UI (shown when AR unavailable or tracking fails) -->
+        <div id="fallback-ui" class="fallback-ui">
+            <div class="fallback-content">
+                <div class="fallback-header">
+                    <img src="../assets/locals-go-logo.svg" alt="Locals Go" class="logo">
+                    <h1>AR Portal Initializing...</h1>
+                </div>
+
+                <div id="ar-status" class="ar-status">Requesting camera access...</div>
+
+                <div id="error-message" class="error-message" style="display: none;">
+                    <p id="error-text"></p>
+                    <button onclick="location.reload()">Try Again</button>
+                </div>
+
+                <div id="checkpoint-card" class="checkpoint-card" style="display: none;">
+                    <!-- This card shows during fallback when AR tracking fails -->
+                    <div class="checkpoint-header">
+                        <span class="checkpoint-label">PORTAL CHECKPOINT ACTIVE</span>
+                        <span class="points-badge" id="points-badge">+50 pts</span>
+                    </div>
+
+                    <h2 id="business-name">Business Name</h2>
+
+                    <!-- Fallback Asset Circle -->
+                    <div class="asset-circle fallback-asset">
+                        <div class="pin-glow">
+                            <svg class="pin-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12c0 7 10 13 10 13s10-6 10-13c0-5.52-4.48-10-10-10zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="currentColor"/>
+                            </svg>
+                        </div>
+                        <p class="photo-coming-soon">Photo coming soon</p>
+                    </div>
+
+                    <!-- Product Card (functional even in fallback) -->
+                    <div class="product-card">
+                        <div class="product-info">
+                            <h3 id="product-name">Treasure Reward</h3>
+                            <p class="product-description">Unlock exclusive rewards at this checkpoint</p>
+                            <span class="price" id="product-price">Free</span>
+                        </div>
+                        <button class="add-to-order-btn" id="add-to-order-btn">Add to Order</button>
+                    </div>
+
+                    <div class="checkpoint-footer">
+                        <a href="../" class="back-link">← Back to Waitlist</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkpoint Overlay (shown when AR is active) -->
+        <div id="checkpoint-overlay" class="checkpoint-overlay" style="display: none;">
+            <div class="checkpoint-card">
+                <div class="checkpoint-header">
+                    <span class="checkpoint-label">PORTAL CHECKPOINT ACTIVE</span>
+                    <span class="points-badge" id="points-badge-ar">+50 pts</span>
+                </div>
+
+                <h2 id="business-name-ar">Business Name</h2>
+
+                <!-- Live AR Asset or Fallback -->
+                <div class="asset-circle" id="asset-circle-ar">
+                    <!-- AR texture renders here; fallback below -->
+                </div>
+
+                <!-- Product Card -->
+                <div class="product-card">
+                    <div class="product-info">
+                        <h3 id="product-name-ar">Treasure Reward</h3>
+                        <p class="product-description" id="product-description-ar">Unlock exclusive rewards</p>
+                        <span class="price" id="product-price-ar">Free</span>
+                    </div>
+                    <button class="add-to-order-btn" id="add-to-order-btn-ar">Add to Order</button>
+                </div>
+
+                <div class="checkpoint-footer">
+                    <button class="close-overlay-btn" onclick="closeCheckpointOverlay()">✕</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Permission & Instructions -->
+        <div id="camera-permission-banner" class="camera-permission-banner">
+            <p>📱 <strong>Camera access required:</strong> Tap "Allow" to see the AR treasure portal</p>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/three.js/ar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsqr.js"></script>
+
+    <!-- Locals Go Supabase Helper -->
+    <script src="../supabase-checkin.js"></script>
+
+    <!-- WebAR App -->
+    <script src="ar-app.js"></script>
+</body>
+</html>
