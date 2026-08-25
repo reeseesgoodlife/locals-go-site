@@ -13,7 +13,7 @@ Twelve pages live under `go.blindrumors.cloud`:
 - `/join-network/` — Public opt-in for the Share Network (name, email, interests)
 - `/share-feed/` — Share Opportunities feed — members see matched campaigns and can Watch / Share / Not Interested
 - `/watch/` — Tracking redirect (`?c=slug&m=membercode`) — logs the click, then sends the visitor to the real video
-- `/giftcard/` — Locals Go $2,000 Gift Card Giveaway graphic (real sponsor list — this replaces the earlier ChatGPT version, which had incorrect business names and should be considered retired)
+- `/giftcard/` — Locals Go $2,000 Gift Card Giveaway graphic (real sponsor list — this replaces the earlier ChatGPT version, which had incorrect business names and should be considered retired[...]
 
 ## Viral Share Network notes
 
@@ -24,7 +24,15 @@ Twelve pages live under `go.blindrumors.cloud`:
 
 ## Admin access
 
-The first person to sign in on `/admin/` automatically becomes the admin (bootstrap rule — only fires once, while the admin list is empty). After that, only existing admins can access the panel; everyone else is signed back out automatically. Make sure Reesee is the first person to log into that page.
+The first person to sign in on `/admin/` automatically becomes the admin (bootstrap rule — only fires once, while the admin list is empty). After that, only existing admins can access the panel;[...]
+
+## AR Marker (targets.mind)
+
+`targets.mind` at the repo root is the compiled MindAR tracking data for `gold-card-treasure-hunt-ar.html`. It was trained on `gold-card-marker.png` — this is the physical/printed marker image players scan to trigger the AR experience.
+
+**Regenerating targets.mind:** If `targets.mind` is ever regenerated, it must be recompiled from `gold-card-marker.png` (or its replacement) at [MindAR's image target compiler](https://hiukim.github.io/mind-ar-js-doc/tools/compile), and uploaded through GitHub's own file uploader directly — not through Copilot chat, since binary files get corrupted when passed through chat-based uploads.
+
+**Preserving the source marker:** `gold-card-marker.png` should also be stored in the repo (in the same folder as `gold-card-treasure-hunt-ar.html`) so the source design is never lost. This file must be uploaded through GitHub's own uploader as well, not through chat.
 
 ## Deploy (GitHub Pages)
 
@@ -38,7 +46,7 @@ The first person to sign in on `/admin/` automatically becomes the admin (bootst
 
 - Waitlist: `https://go.blindrumors.cloud/`
 - Reesee AI Assistant: `https://go.blindrumors.cloud/assistant/`
-- Founder Dashboard: `https://go.blindrumors.cloud/dashboard/` — first visit, click "Create an account" with your own email/password. Only signed-in users can see the data; the public site visitors cannot read any sign-up info even with the page's source code visible.
+- Founder Dashboard: `https://go.blindrumors.cloud/dashboard/` — first visit, click "Create an account" with your own email/password. Only signed-in users can see the data; the public site visit[...]
 
 ## Referral links (waitlist)
 
