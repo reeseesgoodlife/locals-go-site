@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Locals Go — Founding Class AR Portal</title>
+<style>
+  :root {
+    --lime: #B4FF39;
+    --purple: #8B2FE0;
+    --purple-text: #c397f5;
+    --bg: #0d0d10;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  #camera-feed {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  #fx-canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+  #start-screen, #welcome-screen {
+    position: fixed; inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    background: rgba(13,13,16,0.55);
+  }
+  #welcome-screen { display: none; background: var(--bg); }
+  .badge {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--purple-text);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1 {
+    color: #fff;
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  }
+  p.sub {
+    color: #d8d8de;
+    font-size: 14px;
+    max-width: 320px;
+    margin-bottom: 2rem;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+  }
+  button.cta {
+    all: unset;
+    cursor: pointer;
+    background: var(--lime);
+    color: #0d0d10;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    box-shadow: 0 4px 20px rgba(180,255,57,0.35);
+  }
+  button.cta:active { transform: scale(0.97); }
+  #camera-error {
+    display: none;
+    color: #d8d8de;
+    font-size: 13px;
+    max-width: 300px;
+    margin-top: 1rem;
+  }
+  #flash {
+    position: fixed; inset: 0;
+    background: #fff;
+    opacity: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .welcome-inner { max-width: 340px; }
+  .role-list {
+    display: flex; flex-direction: column; gap: 10px;
+    margin: 1.5rem 0;
+    width: 100%;
+  }
+  .role-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #2c2c35;
+    background: #17171c;
+    text-align: left;
+  }
+  .role-card .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--lime);
+    flex-shrink: 0;
+  }
+  .role-card div span.title { color: #fff; font-size: 14px; font-weight: 500; display: block; }
+  .role-card div span.desc { color: #a5a5b0; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<video id="camera-feed" autoplay playsinline muted></video>
+<canvas id="fx-canvas"></canvas>
+<div id="flash"></div>
+
+<div id="start-screen">
+  <div class="badge">// Founding Class AR Portal</div>
+  <h1>A portal just opened.</h1>
+  <p class="sub">Point your camera at the space in front of you, then step through into Locals Go.</p>
+  <button class="cta" id="open-camera-btn">Open the portal</button>
+  <div id="camera-error">Camera access was denied or isn't available on this device — but you can still step through below.</div>
+</div>
+
+<div id="welcome-screen">
+  <div class="welcome-inner">
+    <div class="badge">// Welcome</div>
+    <h1 style="color:#fff;">Congratulations. Welcome to Locals Go.</h1>
+    <p class="sub" style="color:#a5a5b0;">You're in as a Founding Class member. Pick where you start.</p>
+    <div class="role-list">
+      <div class="role-card"><span class="dot"></span><div><span class="title">Shopper</span><span class="desc">Explore the map, hit the machines</span></div></div>
+      <div class="role-card"><span class="dot" style="background:var(--purple);"></span><div><span class="title">Founding partner</span><span class="desc">Put your business on the map</span></div></div>
+      <div class="role-card"><span class="dot"></span><div><span class="title">Ambassador</span><span class="desc">Bring in businesses, earn your cut</span></div></div>
+    </div>
+    <button class="cta" id="continue-btn">Continue to Locals Go</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+const video = document.getElementById('camera-feed');
+const canvas = document.getElementById('fx-canvas');
+const startScreen = document.getElementById('start-screen');
+const welcomeScreen = document.getElementById('welcome-screen');
+const openBtn = document.getElementById('open-camera-btn');
+const continueBtn = document.getElementById('continue-btn');
+const cameraError = document.getElementById('camera-error');
+const flash = document.getElementById('flash');
+
+let renderer, scene, camera, ring, ring2, clock;
+let portalOpened = false;
+
+function initThree() {
+  renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.z = 6;
+
+  const geo = new THREE.TorusGeometry(1.8, 0.08, 16, 100);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xB4FF39, transparent: true, opacity: 0.9 });
+  ring = new THREE.Mesh(geo, mat);
+  scene.add(ring);
+
+  const geo2 = new THREE.TorusGeometry(1.8, 0.18, 16, 100);
+  const mat2 = new THREE.MeshBasicMaterial({ color: 0x8B2FE0, transparent: true, opacity: 0.25 });
+  ring2 = new THREE.Mesh(geo2, mat2);
+  scene.add(ring2);
+
+  clock = new THREE.Clock();
+  animate();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  ring.rotation.z = t * 0.6;
+  ring2.rotation.z = -t * 0.4;
+  const pulse = 1 + Math.sin(t * 2) * 0.03;
+  ring.scale.set(pulse, pulse, 1);
+  ring2.scale.set(pulse * 1.05, pulse * 1.05, 1);
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  if (!renderer) return;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// Races the camera request against a timeout so a stuck or blocked
+// getUserMedia() (common in in-app browsers/webviews) can never hang the page.
+function startCameraWithTimeout(timeoutMs) {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cameraError.style.display = 'block';
+      resolve(false);
+    }, timeoutMs);
+
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    }).then((stream) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.srcObject = stream;
+      video.play().catch(() => {});
+      resolve(true);
+    }).catch(() => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cameraError.style.display = 'block';
+      resolve(false);
+    });
+  });
+}
+
+function stepThroughPortal() {
+  flash.style.transition = 'opacity 0.15s ease';
+  flash.style.opacity = '1';
+  setTimeout(() => {
+    startScreen.style.display = 'none';
+    welcomeScreen.style.display = 'flex';
+    flash.style.opacity = '0';
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+    }
+  }, 180);
+}
+
+openBtn.addEventListener('click', async () => {
+  if (portalOpened) return;
+  portalOpened = true;
+  openBtn.textContent = 'Stepping through…';
+
+  // Ring animation starts immediately — it never waits on the camera.
+  initThree();
+
+  // Camera is best-effort: give it 3.5s max, then move on regardless.
+  await startCameraWithTimeout(3500);
+
+  setTimeout(stepThroughPortal, 1400);
+});
+
+continueBtn.addEventListener('click', () => {
+  window.location.href = 'early-access.html';
+});
+</script>
+</body>
+</html>
