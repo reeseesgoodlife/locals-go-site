@@ -195,16 +195,37 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 });
 
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+// Races the camera request against a timeout so a stuck or blocked
+// getUserMedia() (common in in-app browsers/webviews) can never hang the page.
+function startCameraWithTimeout(timeoutMs) {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cameraError.style.display = 'block';
+      resolve(false);
+    }, timeoutMs);
+
+    navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' } },
       audio: false
+    }).then((stream) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.srcObject = stream;
+      video.play().catch(() => {});
+      resolve(true);
+    }).catch(() => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cameraError.style.display = 'block';
+      resolve(false);
     });
-    video.srcObject = stream;
-  } catch (err) {
-    cameraError.style.display = 'block';
-  }
+  });
 }
 
 function stepThroughPortal() {
@@ -224,13 +245,18 @@ openBtn.addEventListener('click', async () => {
   if (portalOpened) return;
   portalOpened = true;
   openBtn.textContent = 'Stepping through…';
-  await startCamera();
+
+  // Ring animation starts immediately — it never waits on the camera.
   initThree();
+
+  // Camera is best-effort: give it 3.5s max, then move on regardless.
+  await startCameraWithTimeout(3500);
+
   setTimeout(stepThroughPortal, 1400);
 });
 
 continueBtn.addEventListener('click', () => {
-  window.location.href = 'index.html';
+  window.location.href = 'early-access.html';
 });
 </script>
 </body>
