@@ -102,7 +102,7 @@ body{margin:0;background:radial-gradient(circle at 90% 0,#2b1244 0,transparent 3
 <script>
 const CONFIG={
   supabaseUrl:"https://yudsmzobtfdqmdiohkun.supabase.co",
-  supabaseAnonKey:
+  supabaseAnonKey:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1ZHNtem9idGZkcW1kaW9oa3VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1OTU4NjMsImV4cCI6MjEwMTE3MTg2M30.ew0qlTb2sFawIF0f_l8GqUwtS16utoF2wPdjsVO_Hnc
 };
 const configured=CONFIG.supabaseUrl.startsWith("https://")&&!CONFIG.supabaseAnonKey.startsWith("YOUR_");
 const db=configured?window.supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabaseAnonKey):null;
